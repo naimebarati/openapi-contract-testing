@@ -12,3 +12,6 @@ All notable changes are documented here. This project follows [Semantic Versioni
 - Schema compiler: per-dialect Ajv instances (draft-04 for OAS 3.0, 2020-12 for 3.1/3.2), position-aware schema
   transformer, readOnly/writeOnly and discriminator handling, stack-safe compilation of large reference graphs and
   precise contract locations for validation errors.
+- Response validation: status resolution, response headers, Content-Type and media-type selection, JSON/text body
+  handling (absent vs empty vs `null`), HEAD/204/304 rules, structured diagnostics with redaction, text/JSON
+  formatters, and `loadOpenApiContract` with `validateResponse` / `assertResponse`.

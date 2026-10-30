@@ -136,7 +136,14 @@ export class SchemaCompiler {
       validate: (data) => {
         if (validate(data)) return [];
         const errors: ErrorObject[] = [...(validate.errors ?? [])];
-        return toViolations(errors, data, context);
+        // Ajv reports in schema keyword order; sort so the output does not depend on how the schema was written.
+        return toViolations(errors, data, context).sort(
+          (a, b) =>
+            a.instancePath.localeCompare(b.instancePath) ||
+            a.schemaPath.localeCompare(b.schemaPath) ||
+            a.keyword.localeCompare(b.keyword) ||
+            a.message.localeCompare(b.message),
+        );
       },
     };
   }

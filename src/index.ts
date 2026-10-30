@@ -1,3 +1,6 @@
+export { loadOpenApiContract } from './contract/load-openapi-contract.js';
+export { formatValidationResult, toJsonPath } from './diagnostics/format-result.js';
+export type { FormatOptions } from './diagnostics/format-result.js';
 export { ISSUE_CODES } from './diagnostics/issue-codes.js';
 export type { IssueCode } from './diagnostics/issue-codes.js';
 export {
