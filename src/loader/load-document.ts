@@ -4,6 +4,7 @@ import type { ResolvedOptions } from '../contract/contract-options.js';
 import { OpenApiConfigError, OpenApiSpecError } from '../diagnostics/errors.js';
 import { createIssue } from '../diagnostics/issue-factory.js';
 import { LoadDiagnostics } from '../diagnostics/load-diagnostics.js';
+import { deepFreeze } from '../utils/deep-freeze.js';
 import { ReferenceResolver } from './reference-resolver.js';
 import { detectVersion, validateDocumentStructure } from './spec-validator.js';
 import type { OasVersion } from './spec-validator.js';
@@ -78,7 +79,7 @@ export async function loadDocument(options: ResolvedOptions): Promise<LoadedDocu
     const message = 'The OpenAPI document must be an object at the top level.';
     throw new OpenApiSpecError(message, [createIssue('spec.invalid', message)]);
   }
-  const root = data as Record<string, unknown>;
+  const root = deepFreeze(data as Record<string, unknown>);
 
   if (input.kind !== 'file') {
     const base = options.baseDir === undefined ? undefined : path.resolve(options.baseDir);

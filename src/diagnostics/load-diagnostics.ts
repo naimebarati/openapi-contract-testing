@@ -1,5 +1,6 @@
 import type { ContractIssue, UnsupportedFeaturePolicy } from '../public-types.js';
 import { OpenApiSpecError } from './errors.js';
+import type { IssueCode } from './issue-codes.js';
 import { createIssue } from './issue-factory.js';
 
 /**
@@ -8,6 +9,12 @@ import { createIssue } from './issue-factory.js';
  */
 export class LoadDiagnostics {
   private readonly unsupported: ContractIssue[] = [];
+  private readonly warnings: ContractIssue[] = [];
+
+  /** A problem that does not prevent validation (for example a duplicate `operationId`). */
+  reportWarning(code: IssueCode, message: string, extras: Partial<ContractIssue> = {}): void {
+    this.warnings.push(createIssue(code, message, { ...extras, severity: 'warning' }));
+  }
 
   reportUnsupported(message: string, extras: Partial<ContractIssue> = {}): void {
     this.unsupported.push(createIssue('spec.unsupported_feature', message, extras));
@@ -32,6 +39,9 @@ export class LoadDiagnostics {
         sorted,
       );
     }
-    return sorted.map((issue) => ({ ...issue, severity: 'warning' as const }));
+    return [
+      ...this.warnings,
+      ...sorted.map((issue) => ({ ...issue, severity: 'warning' as const })),
+    ];
   }
 }

@@ -198,6 +198,15 @@ export function resolveOptions(options: LoadOpenApiContractOptions): ResolvedOpt
     throw new OpenApiConfigError('Option "routing.serverIndex" must be a non-negative integer.');
   }
 
+  const baseUrl = optionalString(routing['baseUrl'], 'routing.baseUrl');
+  if (baseUrl !== undefined && !/^https?:\/\/[^\s]+$/i.test(baseUrl)) {
+    throw new OpenApiConfigError('Option "routing.baseUrl" must be an absolute http(s) URL.');
+  }
+  const basePath = optionalString(routing['basePath'], 'routing.basePath');
+  if (basePath !== undefined && !basePath.startsWith('/')) {
+    throw new OpenApiConfigError('Option "routing.basePath" must start with "/".');
+  }
+
   return {
     input,
     baseDir: optionalString(raw['baseDir'], 'baseDir'),
@@ -242,8 +251,8 @@ export function resolveOptions(options: LoadOpenApiContractOptions): ResolvedOpt
       ),
     },
     routing: {
-      baseUrl: optionalString(routing['baseUrl'], 'routing.baseUrl'),
-      basePath: optionalString(routing['basePath'], 'routing.basePath'),
+      baseUrl,
+      basePath,
       trailingSlash: oneOf(
         routing['trailingSlash'],
         'routing.trailingSlash',

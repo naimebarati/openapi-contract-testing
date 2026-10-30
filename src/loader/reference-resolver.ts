@@ -2,6 +2,7 @@ import { open, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { OpenApiSpecError } from '../diagnostics/errors.js';
 import { createIssue } from '../diagnostics/issue-factory.js';
+import { deepFreeze } from '../utils/deep-freeze.js';
 import { detectFormat, parseDocumentText } from './yaml-json-parser.js';
 
 /** A position inside one of the loaded documents. `docKey` identifies the document. */
@@ -166,7 +167,7 @@ export class ReferenceResolver {
       throw notAllowed(`Too many referenced files (limit ${this.limits.maxFiles}).`);
     }
     const text = await this.readBounded(real, ref);
-    const data = parseDocumentText(text, detectFormat(real, text), this.label(real));
+    const data = deepFreeze(parseDocumentText(text, detectFormat(real, text), this.label(real)));
     this.docs.set(real, { data, dir: path.dirname(real) });
     return real;
   }
