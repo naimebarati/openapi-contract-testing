@@ -166,3 +166,21 @@ describe('document-level limits', () => {
     expect(doc.resolver.get(location)).toEqual({ type: 'string' });
   });
 });
+
+describe('network paths are never handed to the file system', () => {
+  it.each([
+    '//example.com/share/a.yaml#/x',
+    '\\\\example.com\\share\\a.yaml',
+    '%5C%5Cexample.com%5Cshare%5Ca.yaml',
+  ])('%s', async (ref) => {
+    const started = Date.now();
+    const error = await failure(ref);
+    expect(['reference.not_allowed', 'reference.not_found']).toContain(error.issues[0]?.code);
+    // Contacting a host would take seconds (Windows UNC resolution); refusing is immediate.
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it('reports a network path explicitly', async () => {
+    expect((await failure('//example.com/a.yaml')).message).toContain('network path');
+  });
+});

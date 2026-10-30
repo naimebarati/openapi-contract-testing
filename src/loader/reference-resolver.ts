@@ -150,14 +150,21 @@ export class ReferenceResolver {
     }
     if (decoded.includes('\0')) throw notAllowed(`Reference "${ref}" contains a NUL character.`);
 
+    // Network paths (`//host/share`, `\\\\host\\share`) are never local files. On Windows they resolve to UNC paths,
+    // and merely asking the file system about one contacts the host.
+    if (/^(?:\\\\|\/\/)/.test(decoded)) {
+      throw notAllowed(
+        `Reference "${ref}" is a network path; only files inside the root directory are allowed.`,
+      );
+    }
     const target = path.resolve(baseDir, decoded);
+    // Lexical confinement first: nothing outside the root is ever handed to the file system, so it cannot be
+    // probed or (UNC, special devices) triggered. The `realpath` check below then catches symlink escapes.
+    this.assertInside(target, ref, false);
     let real: string;
     try {
       real = await realpath(target);
     } catch {
-      // A missing file below the root is "not found"; confinement is re-checked lexically first so a
-      // missing file outside the root does not reveal whether it exists.
-      this.assertInside(path.resolve(target), ref, false);
       throw notFound(`Referenced file "${this.label(target)}" was not found (reference "${ref}").`);
     }
     this.assertInside(real, ref, true);
