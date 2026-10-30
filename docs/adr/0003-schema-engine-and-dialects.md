@@ -4,31 +4,31 @@ Status: accepted (Phase 0)
 
 ## Decision
 
-* **Ajv 8** with **separate instances per dialect**: `ajv-draft-04` for OAS 3.0, `ajv/dist/2020` for OAS 3.1 and
+- **Ajv 8** with **separate instances per dialect**: `ajv-draft-04` for OAS 3.0, `ajv/dist/2020` for OAS 3.1 and
   3.2 (Ajv documents that 2020-12 cannot be mixed with older drafts in one instance). Formats from `ajv-formats`;
   user formats via options (sync only).
-* Options: `allErrors: true`, `coerceTypes: false`, `useDefaults: false`, `removeAdditional: false`,
+- Options: `allErrors: true`, `coerceTypes: false`, `useDefaults: false`, `removeAdditional: false`,
   `validateFormats: true`, `strictSchema: true` (unknown keywords throw), `discriminator: false`,
   `allowUnionTypes: true`.
   **`strictTypes: false` and `strictRequired: false`** deliberately: spike tests showed Ajv's strict mode rejects
   valid, common OpenAPI (`maxLength` without `type`; `required` listing properties declared in a sibling `allOf`
   member). They are style lints, not correctness checks; keeping them on would produce false load failures.
-* OAS annotation keywords (`discriminator`, `xml`, `externalDocs`, `example`, plus `readOnly`, `writeOnly`,
+- OAS annotation keywords (`discriminator`, `xml`, `externalDocs`, `example`, plus `readOnly`, `writeOnly`,
   `deprecated` for the draft-04 instance) are registered explicitly. `x-*` extensions are removed only at Schema
-  Object keyword positions; a property *named* `x-foo` or `nullable` is data and is preserved.
-* Unknown keywords produce `spec.unsupported_feature` (error or warning per `unsupportedFeaturePolicy`) instead of
+  Object keyword positions; a property _named_ `x-foo` or `nullable` is data and is preserved.
+- Unknown keywords produce `spec.unsupported_feature` (error or warning per `unsupportedFeaturePolicy`) instead of
   being dropped. Unknown `format` values fail compilation unless the user registers them.
 
 ## OAS 3.0: path B (own adapter), path A rejected
 
 `@openapi-contrib/openapi-schema-to-json-schema@5.1.1` was evaluated (`npm run evidence:converter`):
 
-* 13/14 ground-truth cases correct, but `{type: string, nullable: true, enum: [a, b]}` accepts `null`.
+- 13/14 ground-truth cases correct, but `{type: string, nullable: true, enum: [a, b]}` accepts `null`.
   OAS 3.0.3 says `nullable` adds `null` to `type` only and that `enum` still applies, so `null` must be rejected.
   That is a silent weakening of the contract, i.e. a false negative.
-* It works on whole dereferenced trees without knowing keyword positions, produces no diagnostics for unsupported
+- It works on whole dereferenced trees without knowing keyword positions, produces no diagnostics for unsupported
   keywords, and requires dereferencing first (conflicts with ADR-0002).
-* `npm audit` reports 2 high + 2 moderate advisories in its dependency chain (`openapi-typescript` ->
+- `npm audit` reports 2 high + 2 moderate advisories in its dependency chain (`openapi-typescript` ->
   `undici@5` -> `@fastify/busboy`), and it ships `lodash`, `yargs` and `@types/node` as runtime dependencies.
 
 The adapter lives in the schema transformer (prototype: `proto.mjs`): a position-aware walk over Schema Object
@@ -41,7 +41,7 @@ Proof: `spikes/phase0/phase0.test.mjs` (34 tests, passing on Node 22.22, 24.22, 
 
 ## OAS 3.2
 
-The 3.2 *document* structure is validated with the official 3.2 schema (QUERY method, `additionalOperations`,
+The 3.2 _document_ structure is validated with the official 3.2 schema (QUERY method, `additionalOperations`,
 `$self`, `itemSchema`...). Schema Objects use the same 2020-12 pipeline as 3.1. Features that change response
 semantics but are not implemented in v1 (`itemSchema` / streaming media types, `$self`-based reference bases,
 `additionalOperations` routing until Phase 3 proves it) are reported as `spec.unsupported_feature`, never ignored.

@@ -34,19 +34,19 @@ output (Jest runs CJS and cannot load ESM-only dependencies without extra config
 
 ## Decision
 
-* Parse with **`yaml`** (`maxAliasCount: 100`, YAML 1.2 core schema) and `JSON.parse`.
-* Validate document structure with the **official OAS 3.0 / 3.1 / 3.2 JSON Schemas, vendored into the
+- Parse with **`yaml`** (`maxAliasCount: 100`, YAML 1.2 core schema) and `JSON.parse`.
+- Validate document structure with the **official OAS 3.0 / 3.1 / 3.2 JSON Schemas, vendored into the
   repository** and compiled with Ajv (Ajv draft-04 for 3.0, Ajv 2020 for 3.1/3.2, `strict: false` as these
   meta-level schemas require). The schemas are copied from `@seriousme/openapi-schema-validator`
   (MIT) which redistributes the OpenAPI Initiative schemas; attribution goes into `NOTICE`.
   Refresh procedure is documented next to the vendored files.
-* Do **not** depend on `@scalar/openapi-parser`.
-* Reference resolution is our own small component (ADR-0002).
+- Do **not** depend on `@scalar/openapi-parser`.
+- Reference resolution is our own small component (ADR-0002).
 
 ## Consequences
 
-* 4 runtime dependencies in total: `ajv`, `ajv-draft-04`, `ajv-formats`, `yaml`.
-* We own reference security behaviour and its error codes.
-* We must keep the vendored schemas current (tracked in the release checklist).
-* Document-level validation does not validate the contents of Schema Objects (the official schemas accept any
+- 4 runtime dependencies in total: `ajv`, `ajv-draft-04`, `ajv-formats`, `yaml`.
+- We own reference security behaviour and its error codes.
+- We must keep the vendored schemas current (tracked in the release checklist).
+- Document-level validation does not validate the contents of Schema Objects (the official schemas accept any
   object/boolean there); Schema Objects are validated against the dialect meta-schema when compiled (ADR-0003).

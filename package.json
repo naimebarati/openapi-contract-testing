@@ -1,0 +1,67 @@
+{
+  "name": "openapi-contract-testing",
+  "version": "0.0.0",
+  "description": "Framework-agnostic OpenAPI response contract testing for Node.js: check real HTTP responses against OpenAPI 3.0, 3.1 and 3.2 documents.",
+  "keywords": [
+    "openapi",
+    "contract-testing",
+    "api-testing",
+    "json-schema",
+    "jest",
+    "vitest",
+    "supertest"
+  ],
+  "license": "MIT",
+  "author": "naimebarati <naimebarati@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/naimebarati/openapi-contract-testing.git"
+  },
+  "bugs": {
+    "url": "https://github.com/naimebarati/openapi-contract-testing/issues"
+  },
+  "homepage": "https://github.com/naimebarati/openapi-contract-testing#readme",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:types": "tsc --noEmit -p tests/type-tests/tsconfig.json",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run test:dist && npm run test:types",
+    "test:dist": "node scripts/smoke-dist.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ajv-draft-04": "^1.0.0",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.5",
+    "@vitest/coverage-v8": "^5.0.5",
+    "eslint": "^10.13.0",
+    "expect-type": "^1.4.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "tsup": "^9.0.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.5"
+  }
+}
