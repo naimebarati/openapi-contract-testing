@@ -17,3 +17,6 @@ All notable changes are documented here. This project follows [Semantic Versioni
   formatters, and `loadOpenApiContract` with `validateResponse` / `assertResponse`.
 - Adapters for Fetch, Supertest, Axios and Fastify `inject()` as subpath exports, with integration tests against
   real Express, Fastify and NestJS (generated Swagger document) servers.
+- Jest (`openapi-contract-testing/jest`) and Vitest (`openapi-contract-testing/vitest`) matchers
+  `toConformToOpenApi(contract)` with `.not`, `.resolves` and type augmentation, tested with real Jest 30 (CommonJS
+  build, with and without injected globals) and Vitest 5.

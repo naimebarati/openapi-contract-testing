@@ -7,6 +7,8 @@ export default defineConfig({
     'adapters/supertest': 'src/adapters/supertest.ts',
     'adapters/axios': 'src/adapters/axios.ts',
     'adapters/fastify': 'src/adapters/fastify.ts',
+    jest: 'src/jest.ts',
+    vitest: 'src/vitest.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

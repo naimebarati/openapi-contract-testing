@@ -22,7 +22,12 @@
   },
   "homepage": "https://github.com/naimebarati/openapi-contract-testing#readme",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/jest.js",
+    "./dist/jest.cjs",
+    "./dist/vitest.js",
+    "./dist/vitest.cjs"
+  ],
   "engines": {
     "node": ">=22.12.0"
   },
@@ -42,8 +47,9 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:types": "tsc --noEmit -p tests/type-tests/tsconfig.json",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run test:dist && npm run test:types",
-    "test:dist": "node scripts/smoke-dist.mjs"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build && npm run test:dist && npm run test:types && npm run test:jest",
+    "test:dist": "node scripts/smoke-dist.mjs",
+    "test:jest": "jest --config tests/integration/jest/jest.config.cjs"
   },
   "dependencies": {
     "ajv": "^8.20.0",
@@ -53,6 +59,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@jest/globals": "^30.5.2",
     "@nestjs/common": "^12.3.2",
     "@nestjs/core": "^12.3.2",
     "@nestjs/platform-express": "^12.3.2",
@@ -68,6 +75,7 @@
     "express": "^5.3.0",
     "fastify": "^5.12.7",
     "globals": "^17.13.0",
+    "jest": "^30.5.2",
     "prettier": "^3.9.10",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
@@ -128,9 +136,41 @@
         "default": "./dist/adapters/fastify.cjs"
       }
     },
+    "./jest": {
+      "import": {
+        "types": "./dist/jest.d.ts",
+        "default": "./dist/jest.js"
+      },
+      "require": {
+        "types": "./dist/jest.d.cts",
+        "default": "./dist/jest.cjs"
+      }
+    },
+    "./vitest": {
+      "import": {
+        "types": "./dist/vitest.d.ts",
+        "default": "./dist/vitest.js"
+      },
+      "require": {
+        "types": "./dist/vitest.d.cts",
+        "default": "./dist/vitest.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "peerDependencies": {
+    "expect": "^30.0.0",
+    "vitest": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "expect": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    }
+  }
 }

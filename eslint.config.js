@@ -30,8 +30,24 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.mjs', '**/*.js'],
+    files: ['**/*.mjs', '**/*.js', '**/*.cjs'],
     ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ['tests/integration/jest/**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs', globals: globals.node },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
+  {
+    // Only this project has injected Jest globals; explicit.test.cjs imports them from @jest/globals.
+    files: ['tests/integration/jest/globals.test.cjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.jest } },
   },
   {
     files: ['tests/**/*.ts'],
