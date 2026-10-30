@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { resolveOptions } from '../../../src/contract/contract-options.js';
 import { OpenApiConfigError } from '../../../src/index.js';
@@ -32,9 +34,10 @@ describe('resolveOptions', () => {
     expect(() =>
       resolveOptions({ source: 'a.yaml', refs: { allowRemote: true } } as never),
     ).toThrow(/allowRemote.*not supported/);
-    expect(resolveOptions({ source: new URL('file:///tmp/o.yaml') }).input).toEqual({
+    const file = path.resolve('o.yaml');
+    expect(resolveOptions({ source: pathToFileURL(file) }).input).toEqual({
       kind: 'file',
-      path: '/tmp/o.yaml',
+      path: file,
     });
   });
 

@@ -9,8 +9,14 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const work = mkdtempSync(path.join(os.tmpdir(), 'oct-pack-'));
+// On Windows npm and npx are .cmd shims, which Node can only start through a shell.
 const run = (cmd, args, cwd) =>
-  execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  execFileSync(cmd, args, {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: process.platform === 'win32',
+  });
 const write = (file, content) => {
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, content);

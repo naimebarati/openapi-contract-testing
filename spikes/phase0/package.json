@@ -8,12 +8,11 @@
     "test": "node --test phase0.test.mjs",
     "evidence:scalar": "node scalar.mjs && node scalar2.mjs",
     "evidence:official-schemas": "node seriousme.mjs",
-    "evidence:converter": "node converter-eval.mjs",
+    "evidence:converter": "npm install --no-save @openapi-contrib/openapi-schema-to-json-schema@5.1.1 && node converter-eval.mjs",
     "evidence:perf": "node perf.mjs",
     "audit": "npm audit"
   },
   "dependencies": {
-    "@openapi-contrib/openapi-schema-to-json-schema": "5.1.1",
     "@scalar/openapi-parser": "0.29.19",
     "@seriousme/openapi-schema-validator": "2.11.0",
     "ajv": "8.20.0",

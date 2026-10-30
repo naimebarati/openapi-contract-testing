@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { OpenApiConfigError } from '../diagnostics/errors.js';
 import type {
   LoadOpenApiContractOptions,
@@ -117,7 +118,7 @@ function resolveInput(raw: Record<string, unknown>): ResolvedInput {
           `Only local files are supported as "source" (got ${source.protocol}). Remote documents are not supported in this version.`,
         );
       }
-      return { kind: 'file', path: source.pathname };
+      return { kind: 'file', path: fileURLToPath(source) };
     }
     if (typeof source !== 'string' || source === '') {
       throw new OpenApiConfigError('Option "source" must be a non-empty file path or file: URL.');

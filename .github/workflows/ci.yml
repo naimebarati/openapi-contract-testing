@@ -37,6 +37,23 @@ jobs:
       # npm pack + install into independent ESM, CommonJS and TypeScript projects.
       - run: npm run test:pack
 
+  windows:
+    name: Windows (Node 24)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:dist
+      - run: npm run test:jest
+      - run: npm run test:pack
+
   benchmark:
     name: Benchmark (informational)
     runs-on: ubuntu-latest

@@ -1,3 +1,4 @@
+// Run with `npm run evidence:converter` (installs the library with --no-save; see README).
 // Evaluates @openapi-contrib/openapi-schema-to-json-schema (path A) against OAS 3.0 ground truth.
 import convert from '@openapi-contrib/openapi-schema-to-json-schema'
 import Ajv04 from 'ajv-draft-04'

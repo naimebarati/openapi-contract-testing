@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { resolveOptions } from '../../../src/contract/contract-options.js';
 import { OpenApiConfigError, OpenApiSpecError } from '../../../src/index.js';
@@ -44,7 +44,7 @@ describe('loadDocument: valid documents', () => {
   });
 
   it('accepts a file: URL source', async () => {
-    const url = new URL(`file://${fixture('openapi-3.0/users.yaml')}`);
+    const url = pathToFileURL(fixture('openapi-3.0/users.yaml'));
     expect((await load({ source: url })).version).toBe('3.0');
   });
 
