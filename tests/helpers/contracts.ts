@@ -29,10 +29,13 @@ export async function normalized(
   const resolved = resolveOptions(options);
   const doc = await loadDocument(resolved);
   const model = await normalizeDocument(doc, resolved);
+  const diagnostics = doc.diagnostics;
   return {
     model,
-    diagnostics: doc.diagnostics,
-    index: new OperationIndex(model.operations, resolved.routing.trailingSlash),
+    diagnostics,
+    index: new OperationIndex(model.operations, resolved.routing.trailingSlash, (message) => {
+      diagnostics.reportWarning('spec.path_collision', message);
+    }),
   };
 }
 

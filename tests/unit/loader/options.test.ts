@@ -58,7 +58,11 @@ describe('resolveOptions', () => {
 
   it('applies secure defaults', () => {
     const o = resolveOptions({ source: 'a.yaml' });
-    expect(o.refs).toEqual({ rootDir: undefined, maxFiles: 50, maxBytesPerFile: 5 * 1024 * 1024 });
+    expect(o.refs).toEqual({
+      rootDir: undefined,
+      maxFiles: 1000,
+      maxBytesPerFile: 32 * 1024 * 1024,
+    });
     expect(o.validation).toMatchObject({
       validateFormats: true,
       maxErrors: 100,

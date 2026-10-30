@@ -204,7 +204,8 @@ export class ReferenceResolver {
       if (stats.size > max) {
         throw notAllowed(`Referenced file "${this.label(file)}" exceeds the ${max} byte limit.`);
       }
-      const buffer = Buffer.alloc(max + 1);
+      // size + 1: one spare byte detects a file that grew after fstat, without reserving `max` bytes per file.
+      const buffer = Buffer.alloc(stats.size + 1);
       let total = 0;
       for (;;) {
         const { bytesRead } = await handle.read(buffer, total, buffer.length - total, total);
@@ -213,6 +214,10 @@ export class ReferenceResolver {
         if (total > max) {
           throw notAllowed(`Referenced file "${this.label(file)}" exceeds the ${max} byte limit.`);
         }
+      }
+      if (total >= buffer.length) {
+        // The spare byte was used: the file grew after fstat. Never parse a silently truncated document.
+        throw notAllowed(`Referenced file "${this.label(file)}" changed while it was being read.`);
       }
       return buffer.subarray(0, total).toString('utf8');
     } finally {

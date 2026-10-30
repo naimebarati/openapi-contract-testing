@@ -50,6 +50,12 @@ export class SchemaCompiler {
     this.ajv = adapter.createAjv({
       validateFormats: validation.validateFormats,
       customFormats: validation.customFormats,
+      onPatternFallback: (pattern) => {
+        diagnostics.reportWarning(
+          'spec.unsupported_feature',
+          `Pattern "${pattern.length > 80 ? `${pattern.slice(0, 80)}…` : pattern}" is not valid as a Unicode regular expression and was compiled without the "u" flag (Unicode escapes such as \\p{L} do not work in it).`,
+        );
+      },
     });
     this.registry = new SchemaRegistry(resolver, adapter, diagnostics, {
       writeOnlyInResponse: validation.writeOnlyInResponse,

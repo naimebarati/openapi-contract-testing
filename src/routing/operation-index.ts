@@ -1,5 +1,3 @@
-import { OpenApiSpecError } from '../diagnostics/errors.js';
-import { createIssue } from '../diagnostics/issue-factory.js';
 import type { NormalizedOperation } from '../normalize/model.js';
 import { parsePathTemplate, segmentMatches, splitPath } from './path-template.js';
 import type { ParsedTemplate } from './path-template.js';
@@ -24,7 +22,7 @@ export type LookupResult =
     };
 
 interface MethodTable {
-  statics: Map<string, Route>;
+  statics: Map<string, Route[]>;
   dynamic: Map<string, Route[]>;
 }
 
@@ -38,23 +36,39 @@ export class OperationIndex {
   private readonly tables = new Map<string, MethodTable>();
   private readonly trailingSlash: 'strict' | 'ignore';
 
-  constructor(operations: readonly NormalizedOperation[], trailingSlash: 'strict' | 'ignore') {
+  /**
+   * @param onCollision called once per pair of paths that differ only in parameter names (or, with
+   *   `trailingSlash: 'ignore'`, a trailing slash). OpenAPI forbids them, but real documents contain them, so
+   *   loading continues: such paths are only ambiguous for the methods they share (`operation.ambiguous`).
+   */
+  constructor(
+    operations: readonly NormalizedOperation[],
+    trailingSlash: 'strict' | 'ignore',
+    onCollision: (message: string, pathTemplate: string) => void = () => undefined,
+  ) {
     this.trailingSlash = trailingSlash;
     const owners = new Map<string, string>();
+    const reported = new Set<string>();
     for (const operation of operations) {
       for (const prefix of operation.prefixes) {
         const full = this.normalizeTemplatePath(`${prefix}${operation.path}`);
         const template = parsePathTemplate(full);
         const owner = owners.get(template.canonical);
-        if (owner !== undefined && owner !== operation.path) {
-          const message = `Paths "${owner}" and "${operation.path}" are ambiguous: they only differ in parameter names${
-            this.trailingSlash === 'ignore' ? ' or a trailing slash' : ''
-          }.`;
-          throw new OpenApiSpecError(message, [
-            createIssue('spec.path_collision', message, { pathTemplate: operation.path }),
-          ]);
+        if (
+          owner !== undefined &&
+          owner !== operation.path &&
+          !reported.has(`${owner}\0${operation.path}`)
+        ) {
+          reported.add(`${owner}\0${operation.path}`);
+          onCollision(
+            `Paths "${owner}" and "${operation.path}" are ambiguous: they only differ in parameter names${
+              this.trailingSlash === 'ignore' ? ' or a trailing slash' : ''
+            }. Requests that match both are reported as operation.ambiguous for the methods they share.`,
+            operation.path,
+          );
+        } else if (owner === undefined) {
+          owners.set(template.canonical, operation.path);
         }
-        owners.set(template.canonical, operation.path);
         this.addRoute({ operation, prefix, template });
       }
     }
@@ -76,7 +90,8 @@ export class OperationIndex {
     }
     const { segments, staticCount } = route.template;
     if (staticCount === segments.length) {
-      table.statics.set(segments.map((s) => s.literal).join(SEP), route);
+      const key = segments.map((s) => s.literal).join(SEP);
+      table.statics.set(key, [...(table.statics.get(key) ?? []), route]);
       return;
     }
     const key = bucketKey(segments.length, segments[0]?.rank === 2 ? segments[0].literal : '*');
@@ -93,8 +108,14 @@ export class OperationIndex {
     const matches = this.matching(this.tables.get(method), segments);
     const [best, ...others] = matches;
     if (best === undefined) return this.notFound(segments);
-    if (others.some((other) => !dominates(best, other)))
+    // Templates that differ only in parameter names cannot be told apart; neither can incomparable ones.
+    if (
+      others.some(
+        (other) => other.template.canonical === best.template.canonical || !dominates(best, other),
+      )
+    ) {
       return { kind: 'ambiguous', routes: matches };
+    }
     return { kind: 'found', route: best };
   }
 
@@ -110,7 +131,7 @@ export class OperationIndex {
   private matching(table: MethodTable | undefined, segments: string[]): Route[] {
     if (!table) return [];
     const exact = table.statics.get(segments.join(SEP));
-    if (exact) return [exact];
+    if (exact) return exact;
     const first = segments[0] ?? '';
     const candidates = [
       ...(table.dynamic.get(bucketKey(segments.length, first)) ?? []),

@@ -4,7 +4,11 @@ import { createIssue } from '../diagnostics/issue-factory.js';
 import type { DocLocation, ReferenceResolver } from '../loader/reference-resolver.js';
 import type { WriteOnlyInResponsePolicy } from '../public-types.js';
 import type { SchemaDialectAdapter } from './dialects/index.js';
-import { LAZY_REF_KEYWORD, WRITE_ONLY_KEYWORD } from './dialects/schema-dialect-adapter.js';
+import {
+  ANNOTATION_ONLY_KEYWORDS,
+  LAZY_REF_KEYWORD,
+  WRITE_ONLY_KEYWORD,
+} from './dialects/schema-dialect-adapter.js';
 
 type Obj = Record<string, unknown>;
 
@@ -300,6 +304,8 @@ export class SchemaRegistry {
         );
         // draft-04 forbids an empty "required"; it also means nothing, so it is dropped.
         if (required.length > 0 || this.adapter.version !== '3.0') out[keyword] = required;
+      } else if (ANNOTATION_ONLY_KEYWORDS.has(keyword)) {
+        // Accepted but dropped: no effect on validation (see ANNOTATION_ONLY_KEYWORDS).
       } else if (this.adapter.plainKeywords.has(keyword)) {
         out[keyword] = value;
         if (keyword === 'format') this.noteFormat(value, loc);
@@ -476,9 +482,7 @@ export class SchemaRegistry {
         ),
       });
     }
-    if (defaultMapping === undefined) {
-      guard.push({ required: [property], properties: { [property]: { enum: values } } });
-    } else {
+    if (defaultMapping !== undefined) {
       const target = await this.resolver.resolve(
         loc.docKey,
         /[/#.]/.test(defaultMapping) ? defaultMapping : `#/components/schemas/${defaultMapping}`,
@@ -486,21 +490,48 @@ export class SchemaRegistry {
       const then: Obj = {};
       await this.link(then, owner, target, new Set());
       guard.push({
-        required: [property],
         if: { properties: { [property]: { not: { enum: values } } } },
         then,
       });
     }
     const discriminatorLoc = { docKey: loc.docKey, pointer: `${loc.pointer}/discriminator` };
-    // The generated `if`/enum/required guards belong to the discriminator; the `then` branches are real variants.
+    // The generated `if`/enum/required guards belong to the discriminator; `then`/`else` hold real variants.
     const markSynthetic = (value: unknown): void => {
       if (!isObj(value)) return;
       this.nodeOrigins.set(value, { loc: discriminatorLoc, synthetic: true });
-      for (const [key, child] of Object.entries(value)) if (key !== 'then') markSynthetic(child);
+      for (const [key, child] of Object.entries(value)) {
+        if (key !== 'then' && key !== 'else') markSynthetic(child);
+      }
     };
     guard.forEach(markSynthetic);
+
+    // A discriminator names a *property*, so it can only select a variant for objects. Any other value
+    // (for example the array variant of GitHub's content API) is checked with plain oneOf/anyOf semantics;
+    // without this split, `required`/`properties` pass vacuously on arrays and every `then` branch would apply.
+    const plain: unknown[] = [];
+    for (const [index, variant] of variants.entries()) {
+      plain.push(
+        await this.transform(
+          variant,
+          { docKey: loc.docKey, pointer: `${loc.pointer}/${kind}/${index}` },
+          { owner, inherited: new Set() },
+        ),
+      );
+    }
+    // Dispatch only when the value names a variant (or a defaultMapping exists). Real documents often declare a
+    // discriminator whose values are not the schema names (OpenAI: `type: message` vs schema `Message`); an
+    // unmapped value must then fall back to plain oneOf/anyOf instead of rejecting a valid response.
+    const selector: Obj =
+      defaultMapping === undefined
+        ? { type: 'object', required: [property], properties: { [property]: { enum: values } } }
+        : { type: 'object', required: [property] };
+    const split: Obj = { if: selector, then: { allOf: guard }, else: { [kind]: plain } };
+    markSynthetic(selector);
+    this.nodeOrigins.set(split, { loc: discriminatorLoc, synthetic: true });
+    this.nodeOrigins.set(split['then'] as object, { loc: discriminatorLoc, synthetic: true });
+    this.nodeOrigins.set(split['else'] as object, { loc: discriminatorLoc, synthetic: true });
     const existing = Array.isArray(out['allOf']) ? (out['allOf'] as unknown[]) : [];
-    out['allOf'] = [...existing, ...guard];
+    out['allOf'] = [...existing, split];
   }
 }
 

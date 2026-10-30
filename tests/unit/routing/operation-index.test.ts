@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { OpenApiSpecError } from '../../../src/index.js';
 import type { LookupResult } from '../../../src/routing/operation-index.js';
-import { indexFor, ok, oas } from '../../helpers/contracts.js';
+import { indexFor, normalized, ok, oas } from '../../helpers/contracts.js';
 
 const found = (r: LookupResult): string => {
   if (r.kind !== 'found') throw new Error(`expected found, got ${r.kind}: ${JSON.stringify(r)}`);
@@ -94,13 +93,17 @@ describe('OperationIndex', () => {
       expect(found(index.lookup('GET', '/users/'))).toBe('GET /users');
       expect(found(index.lookup('GET', '/users/1/'))).toBe('GET /users/{id}');
     });
-    it('treats /users and /users/ as a collision when ignored', async () => {
-      await expect(
-        indexFor(oas({ '/users': { get: ok }, '/users/': { get: ok } }), {
-          trailingSlash: 'ignore',
-        }),
-      ).rejects.toThrow(/ambiguous/);
-      await indexFor(oas({ '/users': { get: ok }, '/users/': { get: ok } }));
+    it('treats /users and /users/ as a collision when ignored: ambiguous only for shared methods', async () => {
+      const both = oas({ '/users': { get: ok }, '/users/': { get: ok, post: ok } });
+      const { index, diagnostics } = await normalized({
+        document: both,
+        routing: { trailingSlash: 'ignore' },
+      });
+      expect(index.lookup('GET', '/users').kind).toBe('ambiguous');
+      expect(found(index.lookup('POST', '/users'))).toBe('POST /users/');
+      expect(diagnostics.finalize('error').map((w) => w.code)).toEqual(['spec.path_collision']);
+      // Strict mode keeps them apart.
+      expect(found((await indexFor(both)).lookup('GET', '/users/'))).toBe('GET /users/');
     });
   });
 
@@ -110,12 +113,37 @@ describe('OperationIndex', () => {
   });
 
   describe('collisions and ambiguity', () => {
-    it('rejects paths that differ only in parameter names at load time', async () => {
-      const promise = indexFor(
-        oas({ '/users/{id}': { get: ok }, '/users/{name}': { delete: ok } }),
+    it('reports paths that differ only in parameter names as a warning, not a load failure', async () => {
+      const { diagnostics } = await normalized({
+        document: oas({ '/users/{id}': { get: ok }, '/users/{name}': { delete: ok } }),
+      });
+      const warnings = diagnostics.finalize('error');
+      expect(warnings).toEqual([
+        expect.objectContaining({ code: 'spec.path_collision', severity: 'warning' }),
+      ]);
+      expect(warnings[0]?.message).toContain('"/users/{id}" and "/users/{name}"');
+    });
+
+    it('routes colliding paths by method when their methods differ (real-world: GitHub attestations)', async () => {
+      const index = await indexFor(
+        oas({
+          '/orgs/{org}/att/{attestation_id}': { delete: ok },
+          '/orgs/{org}/att/{subject_digest}': { get: ok },
+        }),
       );
-      await expect(promise).rejects.toBeInstanceOf(OpenApiSpecError);
-      await expect(promise).rejects.toMatchObject({ issues: [{ code: 'spec.path_collision' }] });
+      expect(found(index.lookup('GET', '/orgs/o/att/sha256:abc'))).toBe(
+        'GET /orgs/{org}/att/{subject_digest}',
+      );
+      expect(found(index.lookup('DELETE', '/orgs/o/att/7'))).toBe(
+        'DELETE /orgs/{org}/att/{attestation_id}',
+      );
+    });
+
+    it('reports colliding paths as ambiguous for the methods they share', async () => {
+      const index = await indexFor(
+        oas({ '/users/{id}': { get: ok }, '/users/{name}': { get: ok } }),
+      );
+      expect(index.lookup('GET', '/users/1').kind).toBe('ambiguous');
     });
 
     it('reports incomparable overlapping templates as ambiguous instead of guessing', async () => {

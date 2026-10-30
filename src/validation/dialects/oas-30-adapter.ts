@@ -42,7 +42,7 @@ export const oas30Adapter: SchemaDialectAdapter = {
     'externalDocs',
   ]),
   createAjv(options) {
-    const ajv = new Ajv04(baseAjvOptions(options.validateFormats));
+    const ajv = new Ajv04(baseAjvOptions(options.validateFormats, options.onPatternFallback));
     configureAjv(ajv, options);
     return ajv;
   },

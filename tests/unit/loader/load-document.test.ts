@@ -116,6 +116,38 @@ describe('loadDocument: invalid documents', () => {
     }
   });
 
+  it('explains an Operation Object written as a $ref instead of listing schema noise', async () => {
+    const error = await specError({
+      document: {
+        openapi: '3.1.0',
+        info: { title: 't', version: '1' },
+        paths: { '/a': { get: { $ref: './ops/get-a.yaml' }, put: { $ref: './ops/put-a.yaml' } } },
+      },
+    });
+    expect(error.issues.map((i) => i.instancePath)).toEqual(['/paths/~1a/get', '/paths/~1a/put']);
+    expect(error.message).toContain('a $ref is not allowed at this position');
+    expect(error.message).toContain('redocly bundle');
+    expect(error.message).not.toContain('additional properties');
+  });
+
+  it('gives the same explanation for a $ref in place of a whole headers map', async () => {
+    const error = await specError({
+      document: {
+        openapi: '3.1.0',
+        info: { title: 't', version: '1' },
+        paths: {
+          '/a': {
+            get: { responses: { '200': { description: 'ok', headers: { $ref: './h.yaml' } } } },
+          },
+        },
+      },
+    });
+    expect(error.issues.map((i) => i.instancePath)).toEqual([
+      '/paths/~1a/get/responses/200/headers',
+    ]);
+    expect(error.message).toContain('a $ref is not allowed at this position');
+  });
+
   it('limits the number of reported structural errors', async () => {
     const paths: Record<string, unknown> = {};
     for (let i = 0; i < 20; i++)

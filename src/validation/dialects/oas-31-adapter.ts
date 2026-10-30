@@ -58,7 +58,7 @@ export const oas31Adapter: SchemaDialectAdapter = {
     'contentMediaType',
   ]),
   createAjv(options) {
-    const ajv = new Ajv2020(baseAjvOptions(options.validateFormats));
+    const ajv = new Ajv2020(baseAjvOptions(options.validateFormats, options.onPatternFallback));
     configureAjv(ajv, options);
     return ajv;
   },

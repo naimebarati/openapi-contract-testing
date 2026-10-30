@@ -15,7 +15,7 @@ runtime.
   Existence of files outside the root is not revealed (both existing and missing paths give `reference.not_allowed`).
 - URL schemes are refused. Remote references and URL sources are **not implemented**, so there is no SSRF surface.
   Messages never contain credentials or query values of a refused URL.
-- Limits: files per document (`refs.maxFiles`, 50), bytes per file (`refs.maxBytesPerFile`, 5 MiB, checked with
+- Limits: files per document (`refs.maxFiles`, 1000), bytes per file (`refs.maxBytesPerFile`, 32 MiB, checked with
   `fstat` and while reading), only regular files, YAML alias expansion (100) so alias bombs fail instead of
   exhausting memory. The reference graph between schemas is traversed iteratively. The nesting depth inside one
   schema is limited by the call stack (a few hundred levels); deeper documents fail with a controlled

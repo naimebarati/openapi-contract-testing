@@ -39,7 +39,13 @@ async function build(options: LoadOpenApiContractOptions): Promise<OpenApiContra
   const resolved = resolveOptions(options);
   const doc = await loadDocument(resolved);
   const model = await normalizeDocument(doc, resolved);
-  const index = new OperationIndex(model.operations, resolved.routing.trailingSlash);
+  const index = new OperationIndex(
+    model.operations,
+    resolved.routing.trailingSlash,
+    (message, pathTemplate) => {
+      doc.diagnostics.reportWarning('spec.path_collision', message, { pathTemplate });
+    },
+  );
   const compiled = await compileContract(doc, model, resolved);
   // After compilation: it can still report unsupported features. Throws under policy 'error'.
   const warnings: readonly ContractIssue[] = Object.freeze(

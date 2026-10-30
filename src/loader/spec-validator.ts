@@ -2,6 +2,7 @@ import type { ErrorObject, ValidateFunction } from 'ajv';
 import { Ajv04, Ajv2020, addFormats } from '../utils/ajv-modules.js';
 import { OpenApiSpecError } from '../diagnostics/errors.js';
 import { createIssue } from '../diagnostics/issue-factory.js';
+import { getByPointer } from '../utils/safe-values.js';
 import type { ContractIssue } from '../public-types.js';
 import oas30 from './schemas/oas-3.0.schema.json' with { type: 'json' };
 import oas31 from './schemas/oas-3.1.schema.json' with { type: 'json' };
@@ -69,19 +70,55 @@ export function validateDocumentStructure(
 ): ContractIssue[] {
   const validate = getValidator(version);
   if (validate(doc)) return [];
-  return simplify(validate.errors ?? [])
-    .slice(0, maxErrors)
-    .map((error) =>
+  const errors = simplify(validate.errors ?? []);
+
+  // Split documents often write `get: { $ref: 'ops/get-user.yaml' }` or `headers: { $ref: '...' }`. OpenAPI only
+  // allows a reference where a Reference Object is a permitted alternative, and the generic schema errors for a
+  // misplaced one are confusing: say what is wrong.
+  const misplaced = new Set<string>();
+  for (const error of errors) {
+    const path = error.instancePath.endsWith('/$ref')
+      ? error.instancePath.slice(0, -'/$ref'.length)
+      : error.instancePath;
+    const value = getByPointer(doc, path);
+    if (
+      path !== '' &&
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value) &&
+      Object.keys(value).length === 1 &&
+      typeof (value as { $ref?: unknown }).$ref === 'string'
+    ) {
+      misplaced.add(path);
+    }
+  }
+  const covered = (path: string): boolean =>
+    [...misplaced].some((p) => path === p || path.startsWith(`${p}/`));
+  const hints = [...misplaced]
+    .sort()
+    .map((path) =>
       createIssue(
         'spec.invalid',
-        `${error.instancePath === '' ? '/' : error.instancePath}: ${error.message ?? 'is invalid'}`,
-        {
-          instancePath: error.instancePath,
-          schemaPath: error.schemaPath,
-          keyword: error.keyword,
-        },
+        `${path}: a $ref is not allowed at this position (OpenAPI allows references only where a Reference Object is a permitted alternative, for example path items, parameters, responses, headers and schemas, but not in place of an Operation Object or a whole map such as "headers"). Bundle the document first, for example with \`redocly bundle\`.`,
+        { instancePath: path, keyword: '$ref' },
       ),
     );
+  return [
+    ...hints,
+    ...errors
+      .filter((error) => !covered(error.instancePath))
+      .map((error) =>
+        createIssue(
+          'spec.invalid',
+          `${error.instancePath === '' ? '/' : error.instancePath}: ${error.message ?? 'is invalid'}`,
+          {
+            instancePath: error.instancePath,
+            schemaPath: error.schemaPath,
+            keyword: error.keyword,
+          },
+        ),
+      ),
+  ].slice(0, maxErrors);
 }
 
 /**

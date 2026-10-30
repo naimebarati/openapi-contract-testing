@@ -218,19 +218,19 @@ The matchers are thin wrappers over `contract.validateResponse()`; there is no s
 
 Full detail in [docs/supported-features.md](docs/supported-features.md).
 
-| Area                                     |   OpenAPI 3.0   | OpenAPI 3.1 | OpenAPI 3.2 | Notes                                                                       |
-| ---------------------------------------- | :-------------: | :---------: | :---------: | --------------------------------------------------------------------------- |
-| Document structure validation            |       yes       |     yes     |     yes     | Official OpenAPI JSON Schemas                                               |
-| Schema dialect                           | draft-04 subset |   2020-12   |   2020-12   | Separate validator instances; `nullable`, boolean `exclusiveMin/Max` in 3.0 |
-| `$ref` (local, relative files)           |       yes       |     yes     |     yes     | Confined to a root directory                                                |
-| Circular references                      |       yes       |     yes     |     yes     | Large graphs compile without stack overflows                                |
-| `readOnly` / `writeOnly`                 |       yes       |     yes     |     yes     | Response direction; policy `writeOnlyInResponse`                            |
-| `discriminator` with `oneOf`/`anyOf`     |       yes       |     yes     |     yes     | Dispatches on the property; `defaultMapping` in 3.2                         |
-| Formats                                  |       yes       |     yes     |     yes     | `ajv-formats`, plus your own via `customFormats`                            |
-| `QUERY` and `additionalOperations`       |        -        |      -      |     yes     | Routing only                                                                |
-| `itemSchema`, `$self`, streaming types   |        -        |      -      |  reported   | Reported as `spec.unsupported_feature`, never ignored                       |
-| Remote `$ref` and URL sources            |    not in v1    |  not in v1  |  not in v1  | Rejected explicitly (see security)                                          |
-| Request validation, Swagger 2.0, GraphQL |       no        |     no      |     no      | Out of scope                                                                |
+| Area                                     |   OpenAPI 3.0   | OpenAPI 3.1 | OpenAPI 3.2 | Notes                                                                              |
+| ---------------------------------------- | :-------------: | :---------: | :---------: | ---------------------------------------------------------------------------------- |
+| Document structure validation            |       yes       |     yes     |     yes     | Official OpenAPI JSON Schemas                                                      |
+| Schema dialect                           | draft-04 subset |   2020-12   |   2020-12   | Separate validator instances; `nullable`, boolean `exclusiveMin/Max` in 3.0        |
+| `$ref` (local, relative files)           |       yes       |     yes     |     yes     | Confined to a root directory                                                       |
+| Circular references                      |       yes       |     yes     |     yes     | Large graphs compile without stack overflows                                       |
+| `readOnly` / `writeOnly`                 |       yes       |     yes     |     yes     | Response direction; policy `writeOnlyInResponse`                                   |
+| `discriminator` with `oneOf`/`anyOf`     |       yes       |     yes     |     yes     | Dispatches on the property when its value names a variant; `defaultMapping` in 3.2 |
+| Formats                                  |       yes       |     yes     |     yes     | `ajv-formats`, plus your own via `customFormats`                                   |
+| `QUERY` and `additionalOperations`       |        -        |      -      |     yes     | Routing only                                                                       |
+| `itemSchema`, `$self`, streaming types   |        -        |      -      |  reported   | Reported as `spec.unsupported_feature`, never ignored                              |
+| Remote `$ref` and URL sources            |    not in v1    |  not in v1  |  not in v1  | Rejected explicitly (see security)                                                 |
+| Request validation, Swagger 2.0, GraphQL |       no        |     no      |     no      | Out of scope                                                                       |
 
 Anything the package cannot validate is **reported**, never silently skipped. By default
 (`validation.unsupportedFeaturePolicy: 'error'`) loading fails with a message naming the feature and where it is;
@@ -244,7 +244,7 @@ set `'warning'` to load anyway and read `contract.getWarnings()`.
   so `..` traversal and symlink escapes are refused with `reference.not_allowed`.
 - `http:`, `https:`, `file:` and every other URL scheme are **refused**. Remote references and URL sources are not
   implemented in this version because a trustworthy SSRF defence was out of scope; `refs.allowRemote` is rejected.
-- Limits: `refs.maxFiles` (50) and `refs.maxBytesPerFile` (5 MiB); YAML alias expansion is bounded.
+- Limits: `refs.maxFiles` (1000) and `refs.maxBytesPerFile` (32 MiB); YAML alias expansion is bounded.
 - Validation never performs network requests and never modifies your document, request or response.
 - Diagnostics do not contain response values by default. Set `validation.includeActualValues: true` to include
   truncated actual values; sensitive headers (`Authorization`, `Cookie`, `Set-Cookie`, `X-API-Key`, ...) stay
@@ -271,7 +271,7 @@ See [docs/security.md](docs/security.md).
 await loadOpenApiContract({
   source: './openapi.yaml', // or document / content + contentType
   baseDir: '.', // resolves file refs for document/content inputs
-  refs: { rootDir, maxFiles: 50, maxBytesPerFile: 5 * 1024 * 1024 },
+  refs: { rootDir, maxFiles: 1000, maxBytesPerFile: 32 * 1024 * 1024 },
   validation: {
     validateFormats: true,
     customFormats: { 'currency-code': /^[A-Z]{3}$/ }, // sync only
@@ -308,6 +308,7 @@ Codes: `request.invalid_url`, `operation.not_found`, `operation.ambiguous`, `res
 `response.body.schema_invalid`, `response.body_validation_unsupported`, `response.header_missing`,
 `response.header_invalid`, `spec.invalid`, `spec.unsupported_feature`, `spec.path_collision`,
 `reference.not_allowed`, `reference.not_found`, `schema.compile_failed`. Order is deterministic.
+(`spec.path_collision` is a load warning; the paths are `operation.ambiguous` only for the methods they share.)
 
 - Violations of the contract are **returned**, not thrown. `assertResponse` throws `OpenApiContractAssertionError`
   (`.result` holds the structure).

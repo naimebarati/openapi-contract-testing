@@ -21,8 +21,10 @@ directory.
 **`schema.compile_failed`** A schema is invalid for its dialect (for example `type: strng`, a malformed `pattern`,
 or the 3.0-style boolean `exclusiveMinimum` in a 3.1 document). The message includes the location in the contract.
 
-**`spec.path_collision`** Two paths differ only in parameter names (`/users/{id}` and `/users/{name}`), or with
-`trailingSlash: 'ignore'` only in a trailing slash.
+**`spec.path_collision` (warning)** Two paths differ only in parameter names (`/users/{id}` and `/users/{name}`), or
+with `trailingSlash: 'ignore'` only in a trailing slash. OpenAPI forbids this, but the contract still loads: each
+method that exists on only one of the paths is routed normally, and a method defined on both gives
+`operation.ambiguous`.
 
 ## A response is reported but looks right
 

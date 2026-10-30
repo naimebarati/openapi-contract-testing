@@ -248,3 +248,108 @@ describe('schemas in external files', () => {
     }
   });
 });
+
+describe.each(ALL)(
+  'OpenAPI %s: discriminator with non-object variants (GitHub contents API)',
+  (version) => {
+    const components = {
+      Directory: { type: 'array', items: { $ref: '#/components/schemas/Entry' } },
+      Entry: { type: 'object', required: ['name'], properties: { name: { type: 'string' } } },
+      File: {
+        type: 'object',
+        required: ['type'],
+        properties: { type: { type: 'string', enum: ['file'] }, size: { type: 'integer' } },
+      },
+      Symlink: {
+        type: 'object',
+        required: ['type'],
+        properties: { type: { type: 'string', enum: ['symlink'] }, target: { type: 'string' } },
+      },
+    };
+    const schema = {
+      oneOf: [
+        { $ref: '#/components/schemas/Directory' },
+        { $ref: '#/components/schemas/File' },
+        { $ref: '#/components/schemas/Symlink' },
+      ],
+      discriminator: {
+        propertyName: 'type',
+        mapping: {
+          array: '#/components/schemas/Directory',
+          file: '#/components/schemas/File',
+          symlink: '#/components/schemas/Symlink',
+        },
+      },
+    };
+
+    it('validates arrays with plain oneOf semantics and objects by their discriminator value', async () => {
+      const c = await compileSchema(schema, { version, components });
+      accepts(c, []);
+      accepts(c, [{ name: 'a' }]);
+      accepts(c, { type: 'file', size: 1 });
+      accepts(c, { type: 'symlink', target: 'x' });
+      rejects(c, [{}]);
+      rejects(c, { type: 'file', size: 'big' });
+      rejects(c, { type: 'dir' });
+      rejects(c, { size: 1 });
+      rejects(c, 'text');
+      rejects(c, null);
+    });
+
+    it('still reports the variant-specific error with its contract location', async () => {
+      const c = await compileSchema(schema, { version, components });
+      const [violation] = c.errors({ type: 'file', size: 'big' });
+      expect(violation).toMatchObject({
+        instancePath: '/size',
+        schemaPath: '/components/schemas/File/properties/size/type',
+      });
+    });
+  },
+);
+
+describe.each(ALL)(
+  'OpenAPI %s: discriminator values that are not schema names (OpenAI style)',
+  (version) => {
+    const components = {
+      Message: {
+        type: 'object',
+        required: ['type', 'text'],
+        properties: { type: { type: 'string', enum: ['message'] }, text: { type: 'string' } },
+      },
+      ToolCall: {
+        type: 'object',
+        required: ['type', 'name'],
+        properties: { type: { type: 'string', enum: ['tool_call'] }, name: { type: 'string' } },
+      },
+    };
+    const schema = {
+      oneOf: [{ $ref: '#/components/schemas/Message' }, { $ref: '#/components/schemas/ToolCall' }],
+      discriminator: { propertyName: 'type' },
+    };
+
+    it('accepts real values that differ from the schema names and still rejects wrong payloads', async () => {
+      const c = await compileSchema(schema, { version, components });
+      accepts(c, { type: 'message', text: 'hi' });
+      accepts(c, { type: 'tool_call', name: 'f' });
+      rejects(c, { type: 'message', text: 5 });
+      rejects(c, { type: 'unknown' });
+      rejects(c, { text: 'no type' });
+    });
+
+    it('still dispatches when the value is a schema name', async () => {
+      const lenient = {
+        Cat: { type: 'object', properties: { kind: { type: 'string' }, meow: { type: 'string' } } },
+        Dog: { type: 'object', properties: { kind: { type: 'string' }, bark: { type: 'string' } } },
+      };
+      const c = await compileSchema(
+        {
+          oneOf: [{ $ref: '#/components/schemas/Cat' }, { $ref: '#/components/schemas/Dog' }],
+          discriminator: { propertyName: 'kind' },
+        },
+        { version, components: lenient },
+      );
+      accepts(c, { kind: 'Cat', meow: 'x' }); // would match both variants structurally; dispatch picks Cat
+      rejects(c, { kind: 'Cat', meow: 1 });
+    });
+  },
+);

@@ -23,3 +23,8 @@ All notable changes are documented here. This project follows [Semantic Versioni
 - English documentation, supported-features matrix, architecture and security notes, runnable Express + Vitest example,
   benchmark with recorded baseline, CI (Node 22/24/26) and a pre-release-only publish workflow.
 - Bounded failure modes for pathological documents (deep nesting, alias bombs).
+- Real-world specification run (Stripe, GitHub, OpenAI, Twilio, Discord, Plaid, Box, DigitalOcean, Petstore) with
+  fixes: documentation keywords no longer reach the validator, discriminator dispatch only for objects with a mapped
+  value (arrays and unmapped values use plain `oneOf`), path collisions are warnings, patterns that are only valid
+  without the Unicode flag compile with a warning, clearer errors for misplaced `$ref`, faster file loading, and
+  larger default limits (`refs.maxBytesPerFile` 32 MiB, `refs.maxFiles` 1000). See docs/real-world-results.md.

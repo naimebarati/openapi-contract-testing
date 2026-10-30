@@ -542,3 +542,57 @@ describe('schema sharing', () => {
     expect(compiler.get(first).validate('x')).toEqual([]);
   });
 });
+
+describe.each(ALL)('OpenAPI %s: documentation keywords never reach the validator', (version) => {
+  it('examples, defaults and xml containing id-like or $ref-like data do not break compilation', async () => {
+    const c = await compileSchema(
+      {
+        type: 'object',
+        properties: { name: { type: 'string', example: 'x' } },
+        example: { id: 'not:a-uri', $id: 'https://[bad', $ref: '#/nowhere', name: 'x' },
+        default: { id: 'a:b' },
+        xml: { name: 'thing' },
+        externalDocs: { url: 'http://x' },
+      },
+      { version },
+    );
+    accepts(c, { name: 'a' });
+    rejects(c, { name: 1 });
+    expect(c.diagnostics.count).toBe(0);
+  });
+});
+
+describe.each(ALL)(
+  'OpenAPI %s: patterns that are only valid without the Unicode flag',
+  (version) => {
+    it('compile (with a warning) instead of failing the whole contract', async () => {
+      const c = await compileSchema(
+        { type: 'string', pattern: '^[a-zA-Z0-9_\\-\\:]+$' },
+        { version },
+      );
+      accepts(c, 'a-b:c_1');
+      rejects(c, 'a b');
+      const warnings = c.diagnostics.finalize('error');
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]?.message).toContain('without the "u" flag');
+    });
+
+    it('still rejects a pattern that is invalid in both modes', async () => {
+      // OpenAPI 3.0's document schema already checks that `pattern` is a regex; 3.1+ fails when compiling.
+      const error = await compileSchema({ type: 'string', pattern: '(' }, { version }).catch(
+        (e: unknown) => e,
+      );
+      expect(error).toBeInstanceOf(OpenApiSpecError);
+      expect(['schema.compile_failed', 'spec.invalid']).toContain(
+        (error as OpenApiSpecError).issues[0]?.code,
+      );
+    });
+
+    it('keeps Unicode semantics for patterns that are valid with the flag', async () => {
+      const c = await compileSchema({ type: 'string', pattern: '^\\p{L}+$' }, { version });
+      accepts(c, 'héllo');
+      rejects(c, 'h3llo');
+      expect(c.diagnostics.count).toBe(0);
+    });
+  },
+);

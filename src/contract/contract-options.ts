@@ -5,8 +5,9 @@ import type {
   WriteOnlyInResponsePolicy,
 } from '../public-types.js';
 
-export const DEFAULT_MAX_FILES = 50;
-export const DEFAULT_MAX_BYTES_PER_FILE = 5 * 1024 * 1024;
+export const DEFAULT_MAX_FILES = 1000;
+// Real-world documents are large (Stripe 8 MB, GitHub 14 MB as one file); the limit only guards against absurd input.
+export const DEFAULT_MAX_BYTES_PER_FILE = 32 * 1024 * 1024;
 export const DEFAULT_MAX_BODY_BYTES = 10 * 1024 * 1024;
 export const DEFAULT_MAX_ERRORS = 100;
 

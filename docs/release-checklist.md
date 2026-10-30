@@ -16,6 +16,7 @@ be verified from the development environment.
 - [ ] **open** Package name: on 2026-10-30 `npm view openapi-contract-testing` returned 404 (name unclaimed).
       Re-check immediately before publishing, look at similar names (`npm search openapi contract`), consider a
       scope (`@your-scope/openapi-contract-testing`), and review trademark use of "OpenAPI" in the name.
+- [x] Ran against nine large public specifications (docs/real-world-results.md); findings fixed.
 - [ ] **open** Talk to a few teams using `jest-openapi`/`vitest-openapi`-style tools and run the beta on a real
       project before promoting to `latest`.
 - [ ] Update `version` in `package.json` (`0.1.0-beta.1`) and the CHANGELOG date.

@@ -89,9 +89,9 @@ export interface LoadOpenApiContractOptions {
   refs?: {
     /** Files outside this directory are refused. Defaults to the directory of `source`. */
     rootDir?: string;
-    /** Default 50. */
+    /** Default 1000. */
     maxFiles?: number;
-    /** Default 5 MiB. */
+    /** Default 32 MiB. */
     maxBytesPerFile?: number;
   };
   validation?: {
