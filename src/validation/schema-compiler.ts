@@ -35,6 +35,7 @@ export class SchemaCompiler {
   private readonly ajv: AjvInstance;
   private readonly registry: SchemaRegistry;
   private readonly handles = new Map<SchemaHandle, DocLocation>();
+  private readonly handleByLocation = new Map<string, SchemaHandle>();
   private readonly compiled = new Map<SchemaHandle, CompiledSchema>();
   private built = false;
 
@@ -59,8 +60,13 @@ export class SchemaCompiler {
 
   async add(source: SchemaSource): Promise<SchemaHandle> {
     if (this.built) throw new Error('SchemaCompiler.add() called after build()');
+    // Responses shared through $ref reach here once per operation; the schema at a location is compiled once.
+    const key = `${source.loc.docKey}#${source.loc.pointer}`;
+    const known = this.handleByLocation.get(key);
+    if (known !== undefined) return known;
     const handle = await this.registry.addEntry(source.node, source.loc);
     this.handles.set(handle, source.loc);
+    this.handleByLocation.set(key, handle);
     return handle;
   }
 

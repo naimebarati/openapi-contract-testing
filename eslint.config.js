@@ -4,14 +4,7 @@ import globals from 'globals';
 
 export default tseslint.config(
   {
-    ignores: [
-      'dist/',
-      'coverage/',
-      'spikes/',
-      'node_modules/',
-      'tests/**/fixtures/',
-      'examples/**/node_modules/',
-    ],
+    ignores: ['dist/', 'coverage/', 'spikes/', 'node_modules/', 'tests/**/fixtures/', 'examples/'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,

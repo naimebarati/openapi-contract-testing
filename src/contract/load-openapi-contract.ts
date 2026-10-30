@@ -1,5 +1,6 @@
-import { OpenApiContractAssertionError } from '../diagnostics/errors.js';
+import { OpenApiContractAssertionError, OpenApiSpecError } from '../diagnostics/errors.js';
 import { formatValidationResult } from '../diagnostics/format-result.js';
+import { createIssue } from '../diagnostics/issue-factory.js';
 import { loadDocument } from '../loader/load-document.js';
 import { normalizeDocument } from '../normalize/normalize-document.js';
 import { OperationIndex } from '../routing/operation-index.js';
@@ -22,6 +23,19 @@ import { resolveOptions } from './contract-options.js';
 export async function loadOpenApiContract(
   options: LoadOpenApiContractOptions,
 ): Promise<OpenApiContract> {
+  try {
+    return await build(options);
+  } catch (error) {
+    // Pathologically nested documents exhaust the call stack; report that as a problem with the document.
+    if (error instanceof RangeError && /call stack/i.test(error.message)) {
+      const message = 'The OpenAPI document is nested too deeply to be processed.';
+      throw new OpenApiSpecError(message, [createIssue('spec.invalid', message)]);
+    }
+    throw error;
+  }
+}
+
+async function build(options: LoadOpenApiContractOptions): Promise<OpenApiContract> {
   const resolved = resolveOptions(options);
   const doc = await loadDocument(resolved);
   const model = await normalizeDocument(doc, resolved);

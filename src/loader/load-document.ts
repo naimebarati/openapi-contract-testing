@@ -68,9 +68,11 @@ export async function loadDocument(options: ResolvedOptions): Promise<LoadedDocu
   } else {
     try {
       data = structuredClone(input.document);
-    } catch {
+    } catch (error) {
       throw new OpenApiConfigError(
-        '"document" must contain only plain JSON data (no functions or symbols).',
+        error instanceof RangeError
+          ? '"document" is nested too deeply to be processed.'
+          : '"document" must contain only plain JSON data (no functions or symbols).',
       );
     }
   }

@@ -1,0 +1,36 @@
+# Publishes a PRE-RELEASE to npm. Never publishes the `latest` tag.
+# NOTE: this workflow has not been exercised yet. Check the npm trusted-publishing / token settings first
+# (docs/release-checklist.md), and run it manually.
+name: Release (pre-release)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: npm dist-tag (must not be "latest")
+        required: true
+        default: beta
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse the latest tag
+        run: |
+          if [ "${{ inputs.tag }}" = "latest" ]; then echo "Refusing to publish to latest"; exit 1; fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:pack
+      - run: npm publish --provenance --access public --tag ${{ inputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

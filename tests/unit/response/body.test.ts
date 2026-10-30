@@ -463,11 +463,12 @@ describe('HEAD, 1xx, 204 and 304', () => {
         '204': { description: 'none' },
         '304': { description: 'not modified' },
         '100': { description: 'continue' },
+        '205': { description: 'reset' },
       },
       { method: 'get' },
     );
 
-  it.each([204, 304, 100])('accepts %i without a body and flags a body', async (status) => {
+  it.each([204, 304, 100, 205])('accepts %i without a body and flags a body', async (status) => {
     const c = await contract();
     expect(c.validateResponse(response(status)).valid).toBe(true);
     expect(c.validateResponse(response(status, { bodyPresent: false, body: {} })).valid).toBe(true);

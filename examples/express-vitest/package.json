@@ -1,0 +1,17 @@
+{
+  "name": "example-express-vitest",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:broken": "BREAK_API=1 vitest run"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "openapi-contract-testing": "file:../..",
+    "supertest": "^7.3.1",
+    "vitest": "^5.0.5"
+  }
+}

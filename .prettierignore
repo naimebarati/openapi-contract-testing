@@ -3,3 +3,6 @@ coverage
 spikes
 package-lock.json
 tests/**/fixtures
+examples/*/node_modules
+examples/*/package-lock.json
+benchmarks/*.json

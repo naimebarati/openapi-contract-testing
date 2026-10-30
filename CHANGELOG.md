@@ -2,7 +2,7 @@
 
 All notable changes are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.1.0-beta.1 (unreleased, not yet published)
 
 - Project scaffolding, public types and error classes.
 - Document loader: YAML/JSON/object inputs, structural validation against the official OpenAPI 3.0/3.1/3.2
@@ -20,3 +20,6 @@ All notable changes are documented here. This project follows [Semantic Versioni
 - Jest (`openapi-contract-testing/jest`) and Vitest (`openapi-contract-testing/vitest`) matchers
   `toConformToOpenApi(contract)` with `.not`, `.resolves` and type augmentation, tested with real Jest 30 (CommonJS
   build, with and without injected globals) and Vitest 5.
+- English documentation, supported-features matrix, architecture and security notes, runnable Express + Vitest example,
+  benchmark with recorded baseline, CI (Node 22/24/26) and a pre-release-only publish workflow.
+- Bounded failure modes for pathological documents (deep nesting, alias bombs).

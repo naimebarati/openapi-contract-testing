@@ -4,3 +4,4 @@ coverage/
 *.tgz
 .DS_Store
 .tmp/
+examples/*/package-lock.json

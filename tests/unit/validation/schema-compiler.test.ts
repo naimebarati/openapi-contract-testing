@@ -426,6 +426,15 @@ describe('invalid schemas fail at load with a location', () => {
     });
   });
 
+  it.each([{ const: 'x' }, { prefixItems: [{}] }, { if: {} }])(
+    'OpenAPI 3.0 rejects JSON Schema 2020-12 keywords instead of ignoring them: %j',
+    async (schema) => {
+      await expect(compileSchema(schema, { version: '3.0' })).rejects.toMatchObject({
+        issues: [{ code: 'spec.invalid' }],
+      });
+    },
+  );
+
   it('a broken $ref is reference.not_found', async () => {
     await expect(compileSchema({ $ref: '#/components/schemas/Missing' })).rejects.toMatchObject({
       issues: [{ code: 'reference.not_found' }],
@@ -503,5 +512,33 @@ describe('violations', () => {
   it('are deterministic', async () => {
     const c = await compileSchema({ type: 'object', required: ['a', 'b', 'c'] });
     expect(c.errors({})).toEqual(c.errors({}));
+  });
+});
+
+describe('schema sharing', () => {
+  it('compiles the schema at one location once, however many responses reference it', async () => {
+    const { resolveOptions } = await import('../../../src/contract/contract-options.js');
+    const { loadDocument } = await import('../../../src/loader/load-document.js');
+    const { SchemaCompiler } = await import('../../../src/validation/schema-compiler.js');
+    const { oas } = await import('../../helpers/contracts.js');
+    const resolved = resolveOptions({
+      document: oas({}, { components: { schemas: { A: { type: 'string' } } } }),
+    });
+    const doc = await loadDocument(resolved);
+    const compiler = new SchemaCompiler(
+      doc.version,
+      doc.resolver,
+      doc.rootKey,
+      doc.diagnostics,
+      resolved.validation,
+    );
+    const source = {
+      node: { type: 'string' },
+      loc: { docKey: doc.rootKey, pointer: '/components/schemas/A' },
+    };
+    const first = await compiler.add(source);
+    expect(await compiler.add(source)).toBe(first);
+    compiler.build();
+    expect(compiler.get(first).validate('x')).toEqual([]);
   });
 });
