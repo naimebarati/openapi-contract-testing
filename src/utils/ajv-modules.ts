@@ -15,3 +15,5 @@ function unwrap<T>(module: T): T extends { default: infer D } ? D : T {
 export const Ajv2020 = unwrap(Ajv2020Module);
 export const Ajv04 = unwrap(Ajv04Module);
 export const addFormats = unwrap(addFormatsModule);
+
+export type AjvInstance = InstanceType<typeof Ajv2020> | InstanceType<typeof Ajv04>;

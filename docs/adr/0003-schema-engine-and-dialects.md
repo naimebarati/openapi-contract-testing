@@ -51,3 +51,28 @@ semantics but are not implemented in v1 (`itemSchema` / streaming media types, `
 Compiling 1000 entries over 200 distinct cyclic definitions took ~1.0 s (transform ~0.08 s); 10 000 validations
 ~0.2 s. Compilation is therefore the cost to manage: validators are compiled once per schema and cached; Phase 4
 decides eager vs lazy compilation using the 1000-operation benchmark.
+
+## Addendum (Phase 4): large and cyclic reference graphs
+
+Finding: Ajv compiles `$ref` targets recursively. A ring of 300 mutually referencing schemas (or a long chain)
+raised `Maximum call stack size exceeded`; real specifications with large strongly-connected schema graphs
+behave the same way. Decision, implemented in `SchemaRegistry.linkAndOrder` and covered by
+`tests/unit/validation/deep-references.test.ts` (ring of 600, chain of 1500, all dialects):
+
+1. Build the reference graph while transforming and run an iterative DFS from the entry schemas.
+2. References that close a cycle (DFS back edges) become the custom `octRef` keyword, which resolves its target
+   on first use. All other references stay native Ajv `$ref`, so `unevaluatedProperties` and `$ref` sibling
+   semantics are unaffected for them.
+3. Definitions are compiled in post-order (leaves first), so each native `$ref` points at an already compiled
+   definition and the recursion depth stays constant.
+
+Known limitation: `unevaluatedProperties` / `unevaluatedItems` do not see annotations across a cycle-closing
+reference. This only matters when a recursive reference is used as a sibling/`allOf` member of the schema that
+references it back, which we have not seen in practice.
+
+Error locations: Ajv reports schema paths relative to whichever compiled function raised the error, which cannot
+be attributed to a contract location. Ajv runs in `verbose` mode and every transformed node is registered in a
+`WeakMap`, so an error's `parentSchema` maps exactly to the original `file#/pointer` of the schema node
+(`/components/schemas/M2/properties/v/type`). Generated nodes (discriminator guards, the writeOnly marker) map to
+the `discriminator` / property they were generated from. Raw Ajv errors (which include data in verbose mode) never
+leave the compiler.
