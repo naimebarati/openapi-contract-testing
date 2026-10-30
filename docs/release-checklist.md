@@ -8,9 +8,8 @@ be verified from the development environment.
 - [x] `npm run check` passes (format, lint, typecheck, unit + integration, build, dist smoke, type tests, Jest).
 - [x] `npm run test:pack` passes (tarball installed into independent ESM, CJS and TypeScript projects).
 - [x] Full test suite, dist smoke and Jest suite pass on Node 22.22, 24.22 and 26.13 (local runs).
-- [ ] **open** CI matrix: first GitHub run (commit 07b4e4e) was observed while in progress; Node 26 finished
-      green, Node 22 had passed every step, Node 24 had passed every step up to `test:pack`. Confirm the final
-      result of that run and of the benchmark job on the Actions page.
+- [x] CI matrix: the first GitHub run (commit 07b4e4e) completed with conclusion `success` for Node 22, 24 and 26
+      and for the benchmark job.
 - [x] `npm audit --omit=dev`: 0 vulnerabilities. Licenses of runtime dependencies reviewed (docs/security.md).
 - [ ] **open** Confirm the license of the vendored OpenAPI schemas against the upstream repository
       (https://github.com/OAI/OpenAPI-Specification) and that `NOTICE` is accurate.
