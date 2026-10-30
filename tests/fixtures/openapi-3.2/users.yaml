@@ -1,0 +1,38 @@
+openapi: 3.2.0
+info: { title: Users, version: 1.0.0 }
+servers:
+  - url: /api/v1
+paths:
+  /users/{id}:
+    get:
+      operationId: getUser
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The user
+          headers:
+            X-Request-Id: { required: true, schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '404':
+          description: Not found
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, email]
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        nickname: { type: [string, 'null'] }
+        age: { type: integer, exclusiveMinimum: 0 }
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }

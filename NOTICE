@@ -1,0 +1,9 @@
+openapi-contract-testing
+Copyright (c) 2026 naimebarati, MIT License
+
+This package bundles the following third-party material:
+
+* OpenAPI document JSON Schemas (src/loader/schemas/oas-3.*.schema.json)
+  Origin: OpenAPI Initiative, https://github.com/OAI/OpenAPI-Specification (Apache License 2.0),
+  as modified and redistributed by @seriousme/openapi-schema-validator 2.11.0 (MIT License,
+  Copyright (c) 2016-2026 Hans Klunder). See src/loader/schemas/README.md.

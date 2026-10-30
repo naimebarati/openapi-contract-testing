@@ -20,5 +20,5 @@
     "sourceMap": true,
     "noEmit": true
   },
-  "include": ["src", "tests/unit", "tests/integration", "scripts", "*.config.ts"]
+  "include": ["src", "tests/unit", "tests/security", "tests/integration", "scripts", "*.config.ts"]
 }

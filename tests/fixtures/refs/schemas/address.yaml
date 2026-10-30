@@ -1,0 +1,5 @@
+definitions:
+  Address:
+    type: object
+    properties:
+      street: { type: string }

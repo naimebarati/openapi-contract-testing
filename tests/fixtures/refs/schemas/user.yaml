@@ -1,0 +1,5 @@
+type: object
+properties:
+  id: { type: string }
+  address: { $ref: './address.yaml#/definitions/Address' }
+  friend: { $ref: './user.yaml' }
