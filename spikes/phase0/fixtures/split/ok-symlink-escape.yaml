@@ -1,0 +1,4 @@
+type: object
+properties:
+  x:
+    $ref: './linkout/secret.yaml'

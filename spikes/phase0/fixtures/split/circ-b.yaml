@@ -1,0 +1,5 @@
+type: object
+properties:
+  a:
+    $ref: './circ-a.yaml'
+  n: {type: integer}

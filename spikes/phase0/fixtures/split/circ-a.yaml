@@ -1,0 +1,4 @@
+type: object
+properties:
+  b:
+    $ref: './circ-b.yaml'
