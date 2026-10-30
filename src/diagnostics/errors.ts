@@ -26,6 +26,11 @@ export class OpenApiInputError extends OpenApiContractError {
   override name = 'OpenApiInputError';
 }
 
+/** An adapter could not turn a client response into an exchange (for example a consumed or streamed body). */
+export class OpenApiAdapterError extends OpenApiContractError {
+  override name = 'OpenApiAdapterError';
+}
+
 /** Thrown by `assertResponse`; carries the structured result. */
 export class OpenApiContractAssertionError extends OpenApiContractError {
   override name = 'OpenApiContractAssertionError';

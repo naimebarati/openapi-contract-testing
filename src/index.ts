@@ -4,6 +4,7 @@ export type { FormatOptions } from './diagnostics/format-result.js';
 export { ISSUE_CODES } from './diagnostics/issue-codes.js';
 export type { IssueCode } from './diagnostics/issue-codes.js';
 export {
+  OpenApiAdapterError,
   OpenApiConfigError,
   OpenApiContractAssertionError,
   OpenApiContractError,

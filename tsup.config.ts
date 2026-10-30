@@ -1,7 +1,13 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: { index: 'src/index.ts' },
+  entry: {
+    index: 'src/index.ts',
+    'adapters/fetch': 'src/adapters/fetch.ts',
+    'adapters/supertest': 'src/adapters/supertest.ts',
+    'adapters/axios': 'src/adapters/axios.ts',
+    'adapters/fastify': 'src/adapters/fastify.ts',
+  },
   format: ['esm', 'cjs'],
   dts: true,
   target: 'node22',

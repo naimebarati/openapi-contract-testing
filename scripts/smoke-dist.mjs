@@ -69,4 +69,17 @@ for (const [label, mod] of [
   });
   assert.equal(legacy.getOperations().length, 1, `${label}: 3.0 document`);
 }
+// Every adapter entry point loads from both module systems.
+for (const name of ['fetch', 'supertest', 'axios', 'fastify']) {
+  const fn = {
+    fetch: 'fromFetch',
+    supertest: 'fromSupertest',
+    axios: 'fromAxios',
+    fastify: 'fromFastifyInject',
+  }[name];
+  const viaEsm = await import(`../dist/adapters/${name}.js`);
+  const viaCjs = createRequire(import.meta.url)(`../dist/adapters/${name}.cjs`);
+  assert.equal(typeof viaEsm[fn], 'function', `esm adapters/${name}`);
+  assert.equal(typeof viaCjs[fn], 'function', `cjs adapters/${name}`);
+}
 console.log('dist smoke test passed (esm + cjs)');

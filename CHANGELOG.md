@@ -15,3 +15,5 @@ All notable changes are documented here. This project follows [Semantic Versioni
 - Response validation: status resolution, response headers, Content-Type and media-type selection, JSON/text body
   handling (absent vs empty vs `null`), HEAD/204/304 rules, structured diagnostics with redaction, text/JSON
   formatters, and `loadOpenApiContract` with `validateResponse` / `assertResponse`.
+- Adapters for Fetch, Supertest, Axios and Fastify `inject()` as subpath exports, with integration tests against
+  real Express, Fastify and NestJS (generated Swagger document) servers.

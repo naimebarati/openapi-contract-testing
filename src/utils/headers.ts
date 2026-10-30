@@ -53,7 +53,9 @@ export function toHeaderBag(headers: HeadersLike | undefined, where: string): He
       if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string') {
         throw new OpenApiInputError(`${where}.headers entries must be [name, value] pairs.`);
       }
-      addValue(bag, entry[0], entry[1], where);
+      const value: unknown = entry[1];
+      if (Array.isArray(value)) for (const item of value) addValue(bag, entry[0], item, where);
+      else addValue(bag, entry[0], value, where);
     }
     return bag;
   }
