@@ -2,7 +2,14 @@
 
 All notable changes are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
-## 0.1.0-beta.1 (unreleased, not yet published)
+## 0.1.0-beta.2
+
+`0.1.0-beta.1` was published without its `dist/` folder (it was published by hand from a checkout that had not been built, and the
+package had no `prepack` step), so it contains no code and cannot be used. Use `0.1.0-beta.2`.
+
+- Fix: `prepack` runs the build, so `npm pack` and `npm publish` always include `dist/`, however they are started.
+
+## 0.1.0-beta.1 (broken, deprecated)
 
 - Project scaffolding, public types and error classes.
 - Document loader: YAML/JSON/object inputs, structural validation against the official OpenAPI 3.0/3.1/3.2

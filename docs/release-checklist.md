@@ -41,6 +41,9 @@ no `NPM_TOKEN` secret, so nothing to rotate or leak, and granular tokens are not
    for its alpha), or keep `latest` unset and tell users to install `@beta`.
 5. In a clean folder: `npm install openapi-contract-testing@beta` and try an example from the README.
 
+> **0.1.0-beta.1 is broken** (published without `dist/`). `prepack` now builds before any pack/publish. See "Fixing a
+> bad release" at the end of this file.
+
 ## Before `0.1.0-beta.1`
 
 - [x] `npm run check` passes (format, lint, typecheck, unit + integration, build, dist smoke, type tests, Jest).
@@ -67,3 +70,15 @@ no `NPM_TOKEN` secret, so nothing to rotate or leak, and granular tokens are not
 All acceptance criteria of the design brief must hold, each with a test, plus: real-world specs (large public
 OpenAPI documents) loaded in CI, Windows in the CI matrix, a decision on remote `$ref` (implement with SSRF
 tests, or keep it out), and support statements for Jest/Vitest versions other than the tested ones.
+
+## Fixing a bad release
+
+npm versions are immutable: a published version number can never be reused, even after `npm unpublish`. So:
+
+1. Fix the cause, bump the version (for example `0.1.0-beta.2`) and release it.
+2. Deprecate the bad version so nobody installs it by accident (needs `npm login`):
+   `npm deprecate openapi-contract-testing@0.1.0-beta.1 "Published without dist/; use 0.1.0-beta.2"`.
+   (`npm unpublish` is only possible within 72 hours and still burns the version number.)
+3. Make sure `latest`/`beta` point at the fixed version: `npm dist-tag ls openapi-contract-testing`.
+4. Verify as a user would, in an empty folder: `npm install openapi-contract-testing@beta` and run a README example.
+   Check the file list too: `npm view openapi-contract-testing@<version> dist.unpackedSize` should be about 300 kB, not 39 kB.

@@ -1,6 +1,6 @@
 {
   "name": "openapi-contract-testing",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "Framework-agnostic OpenAPI response contract testing for Node.js: check real HTTP responses against OpenAPI 3.0, 3.1 and 3.2 documents.",
   "keywords": [
     "openapi",
@@ -52,7 +52,8 @@
     "test:dist": "node scripts/smoke-dist.mjs",
     "test:jest": "jest --config tests/integration/jest/jest.config.cjs",
     "test:pack": "node scripts/pack-smoke.mjs",
-    "bench": "node benchmarks/run.mjs"
+    "bench": "node benchmarks/run.mjs",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "ajv": "^8.20.0",
