@@ -37,8 +37,10 @@ output (Jest runs CJS and cannot load ESM-only dependencies without extra config
 - Parse with **`yaml`** (`maxAliasCount: 100`, YAML 1.2 core schema) and `JSON.parse`.
 - Validate document structure with the **official OAS 3.0 / 3.1 / 3.2 JSON Schemas, vendored into the
   repository** and compiled with Ajv (Ajv draft-04 for 3.0, Ajv 2020 for 3.1/3.2, `strict: false` as these
-  meta-level schemas require). The schemas are copied from `@seriousme/openapi-schema-validator`
-  (MIT) which redistributes the OpenAPI Initiative schemas; attribution goes into `NOTICE`.
+  meta-level schemas require). The schemas come from the OpenAPI Initiative's `OAI/spec.openapis.org`
+  repository (Apache-2.0; license text and modifications are documented in `NOTICE` and
+  `src/loader/schemas/README.md`). They were first taken from `@seriousme/openapi-schema-validator` (MIT) and later
+  compared with the upstream files.
   Refresh procedure is documented next to the vendored files.
 - Do **not** depend on `@scalar/openapi-parser`.
 - Reference resolution is our own small component (ADR-0002).

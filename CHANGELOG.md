@@ -28,3 +28,5 @@ All notable changes are documented here. This project follows [Semantic Versioni
   value (arrays and unmapped values use plain `oneOf`), path collisions are warnings, patterns that are only valid
   without the Unicode flag compile with a warning, clearer errors for misplaced `$ref`, faster file loading, and
   larger default limits (`refs.maxBytesPerFile` 32 MiB, `refs.maxFiles` 1000). See docs/real-world-results.md.
+- Vendored OpenAPI schemas verified against their upstream repository (OAI/spec.openapis.org, Apache-2.0): license
+  text shipped in `third-party/`, modifications documented, and the 3.0 schema updated to `2024-10-18`.

@@ -34,6 +34,7 @@ try {
     /^LICENSE$/,
     /^NOTICE$/,
     /^CHANGELOG\.md$/,
+    /^third-party\//,
   ];
   for (const name of names) {
     assert.ok(
@@ -51,6 +52,7 @@ try {
     'LICENSE',
     'NOTICE',
     'README.md',
+    'third-party/OpenAPI-Initiative-LICENSE-Apache-2.0.txt',
   ]) {
     assert.ok(names.includes(required), `missing from tarball: ${required}`);
   }

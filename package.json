@@ -36,7 +36,8 @@
     "README.md",
     "LICENSE",
     "NOTICE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "third-party"
   ],
   "scripts": {
     "build": "tsup",

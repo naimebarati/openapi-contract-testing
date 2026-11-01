@@ -11,8 +11,9 @@ be verified from the development environment.
 - [x] CI matrix: the first GitHub run (commit 07b4e4e) completed with conclusion `success` for Node 22, 24 and 26
       and for the benchmark job.
 - [x] `npm audit --omit=dev`: 0 vulnerabilities. Licenses of runtime dependencies reviewed (docs/security.md).
-- [ ] **open** Confirm the license of the vendored OpenAPI schemas against the upstream repository
-      (https://github.com/OAI/OpenAPI-Specification) and that `NOTICE` is accurate.
+- [x] License of the vendored OpenAPI schemas verified against the upstream repository (OAI/spec.openapis.org,
+      Apache-2.0); license text shipped in `third-party/`, changes documented in `NOTICE` and
+      `src/loader/schemas/README.md`.
 - [ ] **open** Package name: on 2026-10-30 `npm view openapi-contract-testing` returned 404 (name unclaimed).
       Re-check immediately before publishing, look at similar names (`npm search openapi contract`), consider a
       scope (`@your-scope/openapi-contract-testing`), and review trademark use of "OpenAPI" in the name.
