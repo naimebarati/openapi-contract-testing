@@ -81,4 +81,4 @@ npm versions are immutable: a published version number can never be reused, even
    (`npm unpublish` is only possible within 72 hours and still burns the version number.)
 3. Make sure `latest`/`beta` point at the fixed version: `npm dist-tag ls openapi-contract-testing`.
 4. Verify as a user would, in an empty folder: `npm install openapi-contract-testing@beta` and run a README example.
-   Check the file list too: `npm view openapi-contract-testing@<version> dist.unpackedSize` should be about 300 kB, not 39 kB.
+   Check the file list too: `npm view openapi-contract-testing@<version> dist.unpackedSize` should be about 1.6 MB (about 290 kB packed), not the 39 kB of the broken 0.1.0-beta.1.
