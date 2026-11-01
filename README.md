@@ -39,8 +39,10 @@ Spectral/Redocly (linting the OpenAPI file itself).
 ## Install
 
 ```bash
-npm install --save-dev openapi-contract-testing
+npm install --save-dev openapi-contract-testing@beta
 ```
+
+The pre-release is published under the `beta` tag, so install it with `@beta` (or an exact version).
 
 Requires **Node.js >= 22.12**. ESM and CommonJS are both supported. Runtime dependencies: `ajv`, `ajv-draft-04`,
 `ajv-formats`, `yaml`. Jest and Vitest are only needed if you import the matchers; frameworks and HTTP clients are
