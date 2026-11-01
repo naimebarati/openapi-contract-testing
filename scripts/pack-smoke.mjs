@@ -24,7 +24,11 @@ const write = (file, content) => {
 
 try {
   // 1. Tarball contents
-  const packed = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', work], root));
+  // Reproduce 0.1.0-beta.1: pack from a checkout that has not been built. `prepack` must build `dist/` itself.
+  rmSync(path.join(root, 'dist'), { recursive: true, force: true });
+  const output = run('npm', ['pack', '--json', '--pack-destination', work], root);
+  // `prepack` prints the build log before npm's JSON, so parse from the last line that starts the JSON array.
+  const packed = JSON.parse(output.slice(output.lastIndexOf('\n[') + 1));
   const [{ filename, files }] = packed;
   const names = files.map((f) => f.path);
   const allowed = [
