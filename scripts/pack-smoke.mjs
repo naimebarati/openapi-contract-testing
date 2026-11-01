@@ -166,9 +166,20 @@ console.log('esm consumer ok');
   ]);
 
   // 3. TypeScript consumers (ESM and CJS, NodeNext) compile against the shipped declarations.
-  for (const [name, type] of [
-    ['ts-esm', 'module'],
-    ['ts-cjs', 'commonjs'],
+  // The module settings real projects use. Node10 is the default of many NestJS/CommonJS projects: it ignores
+  // `exports`, so the sub-path types (`.../adapters/*`) only resolve through `typesVersions`.
+  const resolutions = {
+    nodenext: { module: 'NodeNext', moduleResolution: 'NodeNext' },
+    bundler: { module: 'ESNext', moduleResolution: 'Bundler' },
+    node16: { module: 'Node16', moduleResolution: 'Node16' },
+    node10: { module: 'CommonJS', moduleResolution: 'Node10', ignoreDeprecations: '6.0' },
+  };
+  for (const [name, type, resolution] of [
+    ['ts-esm', 'module', 'nodenext'],
+    ['ts-cjs', 'commonjs', 'nodenext'],
+    ['ts-bundler', 'module', 'bundler'],
+    ['ts-node16', 'commonjs', 'node16'],
+    ['ts-node10', 'commonjs', 'node10'],
   ]) {
     const dir = consumer(name, type);
     write(
@@ -176,8 +187,7 @@ console.log('esm consumer ok');
       JSON.stringify({
         compilerOptions: {
           strict: true,
-          module: 'NodeNext',
-          moduleResolution: 'NodeNext',
+          ...resolutions[resolution],
           target: 'ES2022',
           noEmit: true,
           skipLibCheck: false,
@@ -212,7 +222,7 @@ export const rejected = loadOpenApiContract({ source: 'x', refs: { allowRemote: 
       dir,
     );
     run('npx', ['tsc', '-p', 'tsconfig.json'], dir);
-    console.log(`${name}: tsc (NodeNext, strict, skipLibCheck: false) ok`);
+    console.log(`${name}: tsc (${resolution}, strict, skipLibCheck: false) ok`);
   }
   console.log('pack smoke test passed');
 } finally {

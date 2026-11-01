@@ -1,6 +1,6 @@
 {
   "name": "openapi-contract-testing",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "Framework-agnostic OpenAPI response contract testing for Node.js: check real HTTP responses against OpenAPI 3.0, 3.1 and 3.2 documents.",
   "keywords": [
     "openapi",
@@ -165,6 +165,19 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "adapters/*": [
+        "./dist/adapters/*.d.ts"
+      ],
+      "jest": [
+        "./dist/jest.d.ts"
+      ],
+      "vitest": [
+        "./dist/vitest.d.ts"
+      ]
+    }
+  },
   "peerDependencies": {
     "expect": "^30.0.0",
     "vitest": "^5.0.0"

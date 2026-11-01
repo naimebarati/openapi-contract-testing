@@ -2,6 +2,14 @@
 
 All notable changes are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
+## 0.1.0-beta.3
+
+- Fix: TypeScript projects using `moduleResolution: node10` (the default for CommonJS projects such as NestJS) could not
+  resolve the types of `openapi-contract-testing/adapters/*`, `/jest` and `/vitest` (TS2307). `typesVersions` now maps
+  them. `npm run test:pack` installs the tarball into TypeScript consumers for `nodenext`, `bundler`, `node16` and
+  `node10`, so a regression fails the release.
+- Docs: how to set up the Jest matcher types in a TypeScript project.
+
 ## 0.1.0-beta.2
 
 `0.1.0-beta.1` was published without its `dist/` folder (it was published by hand from a checkout that had not been built, and the

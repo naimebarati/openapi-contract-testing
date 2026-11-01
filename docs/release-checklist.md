@@ -30,21 +30,36 @@ no `NPM_TOKEN` secret, so nothing to rotate or leak, and granular tokens are not
 
 1. Set `version` in `package.json`, update `CHANGELOG.md`, merge to `main`, wait for a green `ci.yml`.
 2. Optional rehearsal: Actions > Release > Run workflow. It runs every check and ends in `npm publish --dry-run`.
-3. `git tag v0.1.0-beta.1 && git push origin v0.1.0-beta.1`. The workflow refuses a tag that does not match
+3. `git tag v0.1.0-beta.3 && git push origin v0.1.0-beta.3`. The workflow refuses a tag that does not match
    `package.json`, is not on `main`, or whose version is already published; it runs `npm run check` and
    `npm run test:pack`, then `npm publish --provenance`. The dist-tag comes from the version
-   (`0.1.0-beta.1` -> `beta`); it refuses a stable `0.x` version as `latest`.
+   (`0.1.0-beta.3` -> `beta`); it refuses a stable `0.x` version as `latest`.
 4. Afterwards: `npm dist-tag ls openapi-contract-testing`. A first publish can leave `latest` on the placeholder,
    so `npm install openapi-contract-testing` would install `0.0.0-stage`. Either deprecate the placeholder
    (`npm deprecate openapi-contract-testing@0.0.0-stage "placeholder"`) and point `latest` at the beta
-   (`npm dist-tag add openapi-contract-testing@0.1.0-beta.1 latest`, which is what `typeorm-tenant-migrations` has
+   (`npm dist-tag add openapi-contract-testing@0.1.0-beta.3 latest`, which is what `typeorm-tenant-migrations` has
    for its alpha), or keep `latest` unset and tell users to install `@beta`.
 5. In a clean folder: `npm install openapi-contract-testing@beta` and try an example from the README.
 
-> **0.1.0-beta.1 is broken** (published without `dist/`). `prepack` now builds before any pack/publish. See "Fixing a
-> bad release" at the end of this file.
+> **0.1.0-beta.1 is broken** (published without `dist/`) and is deprecated. `prepack` now builds before any
+> pack/publish. See "Fixing a bad release" at the end of this file.
 
-## Before `0.1.0-beta.1`
+## Status
+
+- [x] Trusted publisher configured on npmjs.com (user `naimebarati`, repository `openapi-contract-testing`, workflow
+      `release.yml`); no npm token is stored anywhere.
+- [x] `0.1.0-beta.2` published by the release workflow with provenance; `latest` and `beta` moved to it by hand,
+      `0.0.0-stage` and `0.1.0-beta.1` deprecated.
+- [x] CI green on Ubuntu (Node 22, 24, 26), Windows (Node 24) and the benchmark job.
+- [x] The packed tarball was installed into separate projects: NestJS 11 + Jest 30 + ts-jest, Express + Supertest +
+      Fastify + Axios + Vitest 5 (TypeScript, `bundler`), plain CommonJS Jest, and a plain ESM script using fetch and
+      Axios against a real `node:http` server.
+- [x] That testing found that `moduleResolution: node10` could not resolve the subpath types; fixed with
+      `typesVersions` in `0.1.0-beta.3` and covered by `npm run test:pack`.
+- [ ] Publish `0.1.0-beta.3` (tag `v0.1.0-beta.3`), then move `latest` to it and deprecate `0.1.0-beta.2`
+      (`npm deprecate openapi-contract-testing@0.1.0-beta.2 "No types for TypeScript node10 resolution; use 0.1.0-beta.3"`).
+
+## Checklist for `0.1.0-beta.1` (history)
 
 - [x] `npm run check` passes (format, lint, typecheck, unit + integration, build, dist smoke, type tests, Jest).
 - [x] `npm run test:pack` passes (tarball installed into independent ESM, CJS and TypeScript projects).
@@ -61,9 +76,9 @@ no `NPM_TOKEN` secret, so nothing to rotate or leak, and granular tokens are not
 - [x] Ran against nine large public specifications (docs/real-world-results.md); findings fixed.
 - [ ] **open** Talk to a few teams using `jest-openapi`/`vitest-openapi`-style tools and run the beta on a real
       project before promoting to `latest`.
-- [ ] Update `version` in `package.json` (`0.1.0-beta.1`) and the CHANGELOG date.
-- [ ] Publish through `.github/workflows/release.yml` (see "How a release works"; the workflow has not run yet).
-- [ ] Create a GitHub release marked "pre-release".
+- [x] Version and CHANGELOG updated for each release.
+- [x] Published through `.github/workflows/release.yml`.
+- [ ] Create a GitHub release marked "pre-release" for the beta.
 
 ## Before 1.0
 

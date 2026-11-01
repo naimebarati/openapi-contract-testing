@@ -184,6 +184,10 @@ without consuming them.
 import 'openapi-contract-testing/jest';
 ```
 
+In a TypeScript project use a `.ts` setup file like this one and make sure `tsconfig.json` includes it: the
+`toConformToOpenApi` types only exist for files TypeScript can see this import in. Listing the package directly in
+`setupFilesAfterEnv: ['openapi-contract-testing/jest']` registers the matcher at runtime but not its types.
+
 ```ts
 const exchange = fromSupertest(await request(app).get(url), { method: 'GET', url });
 expect(exchange).toConformToOpenApi(contract);
@@ -192,7 +196,7 @@ expect(badExchange).not.toConformToOpenApi(contract);
 
 With `injectGlobals: false` register it yourself: `expect.extend(matchers)` with
 `import { matchers } from 'openapi-contract-testing/jest'`. Types augment both `@types/jest` and `@jest/globals`.
-Tested with Jest 30 (CommonJS). Details: [docs/jest.md](docs/jest.md).
+Tested with Jest 30 (CommonJS, ts-jest and NestJS 11). Details: [docs/jest.md](docs/jest.md).
 
 ## Vitest
 

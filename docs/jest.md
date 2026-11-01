@@ -11,6 +11,28 @@ module.exports = { setupFilesAfterEnv: ['openapi-contract-testing/jest'] };
 
 Importing `openapi-contract-testing/jest` registers `toConformToOpenApi` on the global `expect`.
 
+### TypeScript
+
+TypeScript only knows the matcher's type in files that can see an import of `openapi-contract-testing/jest`. Naming
+the package in `setupFilesAfterEnv` does not give your test files that type, so use a small setup file instead:
+
+```ts
+// test/setup.ts
+import 'openapi-contract-testing/jest';
+```
+
+```js
+// jest.config.js
+module.exports = { preset: 'ts-jest', setupFilesAfterEnv: ['<rootDir>/test/setup.ts'] };
+```
+
+Make sure `tsconfig.json` includes `test/setup.ts` (for example `"include": ["src", "test"]`); otherwise ts-jest
+reports `Property 'toConformToOpenApi' does not exist`. This works with `moduleResolution` `node10` (the default for
+NestJS CommonJS projects), `node16`, `nodenext` and `bundler`.
+
+Manual testing with NestJS 11, Jest 30 and ts-jest worked. NestJS 12 and `@nestjs/swagger` 12 are published as ESM-only
+and did not load under Jest's default CommonJS mode in that test; that comes from Nest and Jest, not from this package.
+
 With `injectGlobals: false` (or when you prefer explicit imports):
 
 ```ts
