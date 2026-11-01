@@ -30,3 +30,4 @@ All notable changes are documented here. This project follows [Semantic Versioni
   larger default limits (`refs.maxBytesPerFile` 32 MiB, `refs.maxFiles` 1000). See docs/real-world-results.md.
 - Vendored OpenAPI schemas verified against their upstream repository (OAI/spec.openapis.org, Apache-2.0): license
   text shipped in `third-party/`, modifications documented, and the 3.0 schema updated to `2024-10-18`.
+- Release workflow switched to npm trusted publishing (OIDC, provenance, no stored token) with guards for tag/version/main/already-published and for npm auto-corrections; CI actions updated to checkout/setup-node v6.
