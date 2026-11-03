@@ -37,11 +37,11 @@ try {
   run('npm', ['pack', '--pack-destination', work], root);
   const filename = readdirSync(work).find((f) => f.endsWith('.tgz'));
   assert.ok(filename, 'npm pack did not produce a tarball');
-  // The build log that `prepack` prints shares stdout with npm's own output, and how npm orders them differs between
-  // versions. Ask for the file list in a second, script-free run (dist/ exists now) so its output is pure JSON.
-  const [{ files }] = JSON.parse(
-    run('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], root),
-  );
+  // The build log that `prepack` prints shares stdout with npm's own output, so ask for the file list in a second,
+  // script-free run (dist/ exists now) whose output is pure JSON.
+  const listing = JSON.parse(run('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], root));
+  // npm up to 11 prints an array with one entry; npm 12 prints an object keyed by package name.
+  const { files } = Array.isArray(listing) ? listing[0] : Object.values(listing)[0];
   const names = files.map((f) => f.path);
   const allowed = [
     /^dist\//,
