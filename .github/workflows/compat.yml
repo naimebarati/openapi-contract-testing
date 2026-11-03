@@ -1,0 +1,150 @@
+name: Compatibility
+
+# CI runs only when someone pushes, and it installs the exact versions in package-lock.json. This workflow runs on a
+# schedule instead and installs what a user installing the package today would get, so a new release of a dependency,
+# of Jest/Vitest or of Node that breaks this package is noticed within a week and not by a user.
+#
+#   ranges      installs with no lockfile: the newest versions that package.json allows (ajv ^8, yaml ^2, jest ^30,
+#               vitest ^5, ...). A failure here means a fresh install of the published package may already be broken.
+#   next-majors additionally installs the newest versions outside those ranges (a new major of Jest, Vitest, Ajv or
+#               yaml). A failure here is early warning: the ranges still hold, but the next major needs work.
+#
+# A failure opens (or comments on) one issue labelled `compat`; the next fully green run closes it. Nothing is ever
+# merged, changed or published by this workflow.
+#
+# Run it by hand: Actions > Compatibility > Run workflow. "force_failure" makes the first job fail on purpose to
+# rehearse the issue handling.
+
+on:
+  schedule:
+    - cron: '17 5 * * 1' # Mondays, 05:17 UTC
+  workflow_dispatch:
+    inputs:
+      force_failure:
+        description: Fail the first job on purpose to rehearse the issue handling
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compat
+  cancel-in-progress: false
+
+jobs:
+  ranges:
+    name: Newest allowed versions (Node ${{ matrix.node == 'node' && 'latest' || matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22 is the minimum supported Node, 24 is LTS, `node` is whatever the newest release is today.
+        node: [22, 24, node]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Rehearsal failure
+        if: inputs.force_failure && matrix.node == 22
+        run: |
+          echo "force_failure was set: failing on purpose"
+          exit 1
+      # No lockfile and no cache: resolve the ranges in package.json afresh.
+      - run: npm install --no-package-lock --no-audit --no-fund
+      - name: Installed versions
+        run: |
+          {
+            echo "### Node $(node --version), npm $(npm --version)"
+            echo '```'
+            npm ls --depth=0 --no-package-lock ajv ajv-draft-04 ajv-formats yaml jest vitest expect typescript tsup 2>&1 || true
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      # Same checks as CI except format and lint: a new Prettier or ESLint release changing its opinion is a
+      # development concern for the Dependabot PRs, not a compatibility problem for users.
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:dist
+      - run: npm run test:types
+      - run: npm run test:jest
+      - run: npm run test:pack
+
+  next-majors:
+    name: Newest versions, even new majors (Node 24)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm install --no-package-lock --no-audit --no-fund
+      # --no-save keeps package.json as it is; only what is installed changes. TypeScript is left alone on purpose:
+      # it is a development tool here, and the pack test already checks several `moduleResolution` modes.
+      - name: Install the newest releases outside the declared ranges
+        run: >
+          npm install --no-save --no-package-lock --no-audit --no-fund
+          ajv@latest ajv-formats@latest yaml@latest
+          jest@latest @jest/globals@latest vitest@latest @vitest/coverage-v8@latest
+      - name: Installed versions
+        run: |
+          {
+            echo "### Newest versions on Node $(node --version)"
+            echo '```'
+            npm ls --depth=0 --no-package-lock ajv ajv-draft-04 ajv-formats yaml jest vitest expect 2>&1 || true
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:dist
+      - run: npm run test:jest
+      - run: npm run test:pack
+
+  report:
+    name: Issue
+    needs: [ranges, next-majors]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open, update or close the compat issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RANGES: ${{ needs.ranges.result }}
+          NEXT: ${{ needs.next-majors.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          existing=$(gh issue list --label compat --state open --json number --jq '.[0].number // empty' || true)
+
+          if [ "$RANGES" = success ] && [ "$NEXT" = success ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --comment "All compatibility checks pass again: $RUN_URL"
+            fi
+            echo "All green."
+            exit 0
+          fi
+          if [ "$RANGES" != failure ] && [ "$NEXT" != failure ]; then
+            echo "Nothing failed (ranges: $RANGES, next-majors: $NEXT); leaving issues alone."
+            exit 0
+          fi
+
+          body="Compatibility check of $(date -u +%F): $RUN_URL
+
+          - Newest versions allowed by package.json (what a fresh install gets today): **$RANGES**
+          - Newest versions including new majors (early warning): **$NEXT**
+
+          \`ranges\` failing means the published package may already be broken for new installs. \`next-majors\` failing
+          alone means the declared ranges still work but a newer major needs attention. Open the run for the installed
+          versions (job summary) and the failing step. This issue is closed automatically by the next green run."
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh label create compat --color D93F0B --description "Scheduled compatibility check failed" 2>/dev/null || true
+            gh issue create --label compat --title "Scheduled compatibility check failed" --body "$body"
+          fi

@@ -1,0 +1,34 @@
+# Weekly update PRs. Every PR goes through the normal CI; nothing is merged or released automatically.
+# Whether the published package still works with newer versions of its dependencies is checked separately by
+# .github/workflows/compat.yml.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for all minor and patch updates of the tooling used to develop and test the package.
+      dev-tooling:
+        dependency-type: development
+        update-types: [minor, patch]
+      # Runtime dependencies (ajv, yaml, ...) get their own PR because they change what users install.
+      runtime:
+        dependency-type: production
+        update-types: [minor, patch]
+    # Major versions of any dependency arrive as individual PRs so each one can be judged on its own.
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Etc/UTC
+    groups:
+      actions:
+        patterns: ['*']

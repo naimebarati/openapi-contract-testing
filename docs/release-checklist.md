@@ -80,6 +80,17 @@ no `NPM_TOKEN` secret, so nothing to rotate or leak, and granular tokens are not
 - [x] Published through `.github/workflows/release.yml`.
 - [ ] Create a GitHub release marked "pre-release" for the beta.
 
+## Ongoing compatibility checks
+
+CI only runs on pushes and uses the locked versions, so two scheduled jobs watch for breakage that nobody pushed:
+
+- `.github/dependabot.yml`: weekly update PRs (one for development tooling, one for runtime dependencies, one for
+  GitHub Actions; every major version on its own). They go through the normal CI and are never merged automatically.
+- `.github/workflows/compat.yml` (Mondays, also runnable by hand): installs without the lockfile, so it gets the newest
+  versions package.json allows, on Node 22, 24 and the newest Node, and runs typecheck, tests, build, dist, type, Jest
+  and pack tests. A second job also installs new majors of Jest, Vitest, Ajv and yaml as an early warning. A failure
+  opens or updates one issue labelled `compat`; the next green run closes it. Look at that issue before every release.
+
 ## Before 1.0
 
 All acceptance criteria of the design brief must hold, each with a test, plus: real-world specs (large public
