@@ -2,7 +2,15 @@
 // Run after `npm run build`:  node scripts/pack-smoke.mjs
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,10 +34,14 @@ try {
   // 1. Tarball contents
   // Reproduce 0.1.0-beta.1: pack from a checkout that has not been built. `prepack` must build `dist/` itself.
   rmSync(path.join(root, 'dist'), { recursive: true, force: true });
-  const output = run('npm', ['pack', '--json', '--pack-destination', work], root);
-  // `prepack` prints the build log before npm's JSON, so parse from the last line that starts the JSON array.
-  const packed = JSON.parse(output.slice(output.lastIndexOf('\n[') + 1));
-  const [{ filename, files }] = packed;
+  run('npm', ['pack', '--pack-destination', work], root);
+  const filename = readdirSync(work).find((f) => f.endsWith('.tgz'));
+  assert.ok(filename, 'npm pack did not produce a tarball');
+  // The build log that `prepack` prints shares stdout with npm's own output, and how npm orders them differs between
+  // versions. Ask for the file list in a second, script-free run (dist/ exists now) so its output is pure JSON.
+  const [{ files }] = JSON.parse(
+    run('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], root),
+  );
   const names = files.map((f) => f.path);
   const allowed = [
     /^dist\//,
@@ -61,7 +73,7 @@ try {
     assert.ok(names.includes(required), `missing from tarball: ${required}`);
   }
   console.log(
-    `tarball ${filename}: ${names.length} files, ${(packed[0].size / 1024).toFixed(0)} kB packed`,
+    `tarball ${filename}: ${names.length} files, ${(statSync(path.join(work, filename)).size / 1024).toFixed(0)} kB packed`,
   );
   const tarball = path.join(work, filename);
 
