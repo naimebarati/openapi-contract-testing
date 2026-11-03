@@ -6,6 +6,10 @@ name: Compatibility
 #
 #   ranges      installs with no lockfile: the newest versions that package.json allows (ajv ^8, yaml ^2, jest ^30,
 #               vitest ^5, ...). A failure here means a fresh install of the published package may already be broken.
+#   published   installs what the npm registry serves right now (`latest`, `beta`) into fresh ESM, CommonJS and
+#               TypeScript projects (four `moduleResolution` modes) and uses it. A failure here means users installing
+#               the package today get something broken, whatever the cause: a bad release, a registry problem or a
+#               dependency that was updated underneath it.
 #   next-majors additionally installs the newest versions outside those ranges (a new major of Jest, Vitest, Ajv or
 #               yaml). A failure here is early warning: the ranges still hold, but the next major needs work.
 #
@@ -71,6 +75,27 @@ jobs:
       - run: npm run test:jest
       - run: npm run test:pack
 
+  published:
+    name: Published package (${{ matrix.spec }}, Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { spec: 'openapi-contract-testing@latest', node: 22 }
+          - { spec: 'openapi-contract-testing@latest', node: 24 }
+          - { spec: 'openapi-contract-testing@beta', node: 24 }
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+      # Uses only the script from this checkout; the package itself comes from the registry, so nothing is built or
+      # installed from the repository.
+      - run: npm run test:published
+        env:
+          OCT_PUBLISHED_SPEC: ${{ matrix.spec }}
+
   next-majors:
     name: Newest versions, even new majors (Node 24)
     runs-on: ubuntu-latest
@@ -104,7 +129,7 @@ jobs:
 
   report:
     name: Issue
-    needs: [ranges, next-majors]
+    needs: [ranges, published, next-majors]
     if: always()
     runs-on: ubuntu-latest
     permissions:
@@ -115,30 +140,32 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RANGES: ${{ needs.ranges.result }}
+          PUBLISHED: ${{ needs.published.result }}
           NEXT: ${{ needs.next-majors.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
           existing=$(gh issue list --label compat --state open --json number --jq '.[0].number // empty' || true)
 
-          if [ "$RANGES" = success ] && [ "$NEXT" = success ]; then
+          if [ "$RANGES" = success ] && [ "$PUBLISHED" = success ] && [ "$NEXT" = success ]; then
             if [ -n "$existing" ]; then
               gh issue close "$existing" --comment "All compatibility checks pass again: $RUN_URL"
             fi
             echo "All green."
             exit 0
           fi
-          if [ "$RANGES" != failure ] && [ "$NEXT" != failure ]; then
-            echo "Nothing failed (ranges: $RANGES, next-majors: $NEXT); leaving issues alone."
+          if [ "$RANGES" != failure ] && [ "$PUBLISHED" != failure ] && [ "$NEXT" != failure ]; then
+            echo "Nothing failed (ranges: $RANGES, published: $PUBLISHED, next-majors: $NEXT); leaving issues alone."
             exit 0
           fi
 
           body="Compatibility check of $(date -u +%F): $RUN_URL
 
+          - Package as published on npm (\`latest\` and \`beta\`, installed into fresh projects): **$PUBLISHED**
           - Newest versions allowed by package.json (what a fresh install gets today): **$RANGES**
           - Newest versions including new majors (early warning): **$NEXT**
 
-          \`ranges\` failing means the published package may already be broken for new installs. \`next-majors\` failing
+          \`published\` failing means what users install right now is broken. \`ranges\` failing means the package may break for new installs. \`next-majors\` failing
           alone means the declared ranges still work but a newer major needs attention. Open the run for the installed
           versions (job summary) and the failing step. This issue is closed automatically by the next green run."
 

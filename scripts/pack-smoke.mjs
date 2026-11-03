@@ -1,8 +1,11 @@
 // Packs the package, installs the tarball into fresh, independent projects and uses it the way consumers do.
-// Run after `npm run build`:  node scripts/pack-smoke.mjs
+//   node scripts/pack-smoke.mjs                  pack this checkout (builds through `prepack`) and test the tarball
+//   OCT_PUBLISHED_SPEC=openapi-contract-testing@latest node scripts/pack-smoke.mjs
+//                                                 skip packing and test what the npm registry serves for that spec
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
+  existsSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -16,6 +19,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const published = process.env.OCT_PUBLISHED_SPEC;
+const requiredFiles = [
+  'dist/index.js',
+  'dist/index.cjs',
+  'dist/index.d.ts',
+  'dist/index.d.cts',
+  'dist/jest.cjs',
+  'dist/vitest.js',
+  'LICENSE',
+  'NOTICE',
+  'README.md',
+  'third-party/OpenAPI-Initiative-LICENSE-Apache-2.0.txt',
+];
 const work = mkdtempSync(path.join(os.tmpdir(), 'oct-pack-'));
 // On Windows npm and npx are .cmd shims, which Node can only start through a shell.
 const run = (cmd, args, cwd) =>
@@ -31,51 +47,45 @@ const write = (file, content) => {
 };
 
 try {
-  // 1. Tarball contents
-  // Reproduce 0.1.0-beta.1: pack from a checkout that has not been built. `prepack` must build `dist/` itself.
-  rmSync(path.join(root, 'dist'), { recursive: true, force: true });
-  run('npm', ['pack', '--pack-destination', work], root);
-  const filename = readdirSync(work).find((f) => f.endsWith('.tgz'));
-  assert.ok(filename, 'npm pack did not produce a tarball');
-  // The build log that `prepack` prints shares stdout with npm's own output, so ask for the file list in a second,
-  // script-free run (dist/ exists now) whose output is pure JSON.
-  const listing = JSON.parse(run('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], root));
-  // npm up to 11 prints an array with one entry; npm 12 prints an object keyed by package name.
-  const { files } = Array.isArray(listing) ? listing[0] : Object.values(listing)[0];
-  const names = files.map((f) => f.path);
-  const allowed = [
-    /^dist\//,
-    /^package\.json$/,
-    /^README\.md$/,
-    /^LICENSE$/,
-    /^NOTICE$/,
-    /^CHANGELOG\.md$/,
-    /^third-party\//,
-  ];
-  for (const name of names) {
-    assert.ok(
-      allowed.some((re) => re.test(name)),
-      `unexpected file in tarball: ${name}`,
+  // 1. Tarball contents (the published package is checked after installing it, below)
+  let target = published;
+  if (!published) {
+    // Reproduce 0.1.0-beta.1: pack from a checkout that has not been built. `prepack` must build `dist/` itself.
+    rmSync(path.join(root, 'dist'), { recursive: true, force: true });
+    run('npm', ['pack', '--pack-destination', work], root);
+    const filename = readdirSync(work).find((f) => f.endsWith('.tgz'));
+    assert.ok(filename, 'npm pack did not produce a tarball');
+    // The build log that `prepack` prints shares stdout with npm's own output, so ask for the file list in a second,
+    // script-free run (dist/ exists now) whose output is pure JSON.
+    const listing = JSON.parse(
+      run('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], root),
     );
+    // npm up to 11 prints an array with one entry; npm 12 prints an object keyed by package name.
+    const { files } = Array.isArray(listing) ? listing[0] : Object.values(listing)[0];
+    const names = files.map((f) => f.path);
+    const allowed = [
+      /^dist\//,
+      /^package\.json$/,
+      /^README\.md$/,
+      /^LICENSE$/,
+      /^NOTICE$/,
+      /^CHANGELOG\.md$/,
+      /^third-party\//,
+    ];
+    for (const name of names) {
+      assert.ok(
+        allowed.some((re) => re.test(name)),
+        `unexpected file in tarball: ${name}`,
+      );
+    }
+    for (const required of requiredFiles) {
+      assert.ok(names.includes(required), `missing from tarball: ${required}`);
+    }
+    console.log(
+      `tarball ${filename}: ${names.length} files, ${(statSync(path.join(work, filename)).size / 1024).toFixed(0)} kB packed`,
+    );
+    target = path.join(work, filename);
   }
-  for (const required of [
-    'dist/index.js',
-    'dist/index.cjs',
-    'dist/index.d.ts',
-    'dist/index.d.cts',
-    'dist/jest.cjs',
-    'dist/vitest.js',
-    'LICENSE',
-    'NOTICE',
-    'README.md',
-    'third-party/OpenAPI-Initiative-LICENSE-Apache-2.0.txt',
-  ]) {
-    assert.ok(names.includes(required), `missing from tarball: ${required}`);
-  }
-  console.log(
-    `tarball ${filename}: ${names.length} files, ${(statSync(path.join(work, filename)).size / 1024).toFixed(0)} kB packed`,
-  );
-  const tarball = path.join(work, filename);
 
   const spec = (version) => `openapi: ${version}
 info: { title: Pack smoke, version: 1.0.0 }
@@ -149,9 +159,24 @@ console.log('esm consumer ok');
 })().catch((e) => { console.error(e); process.exit(1); });
 `,
   );
-  for (const dir of [esm, cjs]) run('npm', ['install', '--no-audit', '--no-fund', tarball], dir);
+  for (const dir of [esm, cjs]) run('npm', ['install', '--no-audit', '--no-fund', target], dir);
   console.log(run('node', ['run.mjs'], esm).trim());
   console.log(run('node', ['run.cjs'], cjs).trim());
+
+  if (published) {
+    // The same files the tarball check above requires, now on disk after a real install from the registry.
+    const installedRoot = path.join(esm, 'node_modules/openapi-contract-testing');
+    for (const required of requiredFiles) {
+      assert.ok(
+        existsSync(path.join(installedRoot, required)),
+        `missing after install: ${required}`,
+      );
+    }
+    const version = JSON.parse(
+      readFileSync(path.join(installedRoot, 'package.json'), 'utf8'),
+    ).version;
+    console.log(`installed from the registry: ${published} -> ${version}`);
+  }
 
   // Only the declared runtime dependencies (and theirs) are installed; no frameworks or test runners.
   const installed = readdirSync(path.join(esm, 'node_modules'));
@@ -230,7 +255,7 @@ export const rejected = loadOpenApiContract({ source: 'x', refs: { allowRemote: 
     );
     run(
       'npm',
-      ['install', '--no-audit', '--no-fund', tarball, 'typescript@~6.0.3', '@types/node@22'],
+      ['install', '--no-audit', '--no-fund', target, 'typescript@~6.0.3', '@types/node@22'],
       dir,
     );
     run('npx', ['tsc', '-p', 'tsconfig.json'], dir);

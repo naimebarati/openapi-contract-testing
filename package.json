@@ -52,6 +52,7 @@
     "test:dist": "node scripts/smoke-dist.mjs",
     "test:jest": "jest --config tests/integration/jest/jest.config.cjs",
     "test:pack": "node scripts/pack-smoke.mjs",
+    "test:published": "OCT_PUBLISHED_SPEC=${OCT_PUBLISHED_SPEC:-openapi-contract-testing@latest} node scripts/pack-smoke.mjs",
     "bench": "node benchmarks/run.mjs",
     "prepack": "npm run build"
   },

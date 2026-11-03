@@ -88,7 +88,10 @@ CI only runs on pushes and uses the locked versions, so two scheduled jobs watch
   GitHub Actions; every major version on its own). They go through the normal CI and are never merged automatically.
 - `.github/workflows/compat.yml` (Mondays, also runnable by hand): installs without the lockfile, so it gets the newest
   versions package.json allows, on Node 22, 24 and the newest Node, and runs typecheck, tests, build, dist, type, Jest
-  and pack tests. A second job also installs new majors of Jest, Vitest, Ajv and yaml as an early warning. A failure
+  and pack tests. A `published` job installs the package from the
+  npm registry (`latest` and `beta`) into fresh ESM, CommonJS and TypeScript projects (`OCT_PUBLISHED_SPEC=... npm run
+test:published` does the same by hand, for example `openapi-contract-testing@0.1.0-beta.3` right after a release). A
+  further job also installs new majors of Jest, Vitest, Ajv and yaml as an early warning. A failure
   opens or updates one issue labelled `compat`; the next green run closes it. Look at that issue before every release.
 
 ## Before 1.0
