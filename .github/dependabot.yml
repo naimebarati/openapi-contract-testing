@@ -20,7 +20,16 @@ updates:
       runtime:
         dependency-type: production
         update-types: [minor, patch]
-    # Major versions of any dependency arrive as individual PRs so each one can be judged on its own.
+    # Major versions of any dependency arrive as individual PRs so each one can be judged on its own, except:
+    ignore:
+      # The types must match the oldest Node the package supports (engines: >=22.12). Newer types would let code use
+      # APIs that do not exist on Node 22 without any test noticing. Raise this by hand when the minimum Node changes.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      # TypeScript 7 removed `moduleResolution: node10`, which this package supports, and typescript-eslint does not
+      # accept it yet. Move to it deliberately, not through a bot PR.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
