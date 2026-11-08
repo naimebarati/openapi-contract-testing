@@ -56,8 +56,11 @@ no `NPM_TOKEN` secret, so nothing to rotate or leak, and granular tokens are not
       Axios against a real `node:http` server.
 - [x] That testing found that `moduleResolution: node10` could not resolve the subpath types; fixed with
       `typesVersions` in `0.1.0-beta.3` and covered by `npm run test:pack`.
-- [ ] Publish `0.1.0-beta.3` (tag `v0.1.0-beta.3`), then move `latest` to it and deprecate `0.1.0-beta.2`
-      (`npm deprecate openapi-contract-testing@0.1.0-beta.2 "No types for TypeScript node10 resolution; use 0.1.0-beta.3"`).
+- [x] `0.1.0-beta.3` published by the release workflow (tag `v0.1.0-beta.3`, provenance); `latest` and `beta` moved to
+      it, `0.1.0-beta.2` deprecated. Installed from the registry into fresh ESM, CommonJS and TypeScript projects.
+- [x] GitHub release `v0.1.0-beta.3` created and marked "pre-release".
+- [x] Scheduled checks in place (Dependabot, `compat.yml`); see "Ongoing compatibility checks".
+- [ ] **open** Next: use the beta on a real project (see the open item below) before any `0.1.0`.
 
 ## Checklist for `0.1.0-beta.1` (history)
 
@@ -70,15 +73,14 @@ no `NPM_TOKEN` secret, so nothing to rotate or leak, and granular tokens are not
 - [x] License of the vendored OpenAPI schemas verified against the upstream repository (OAI/spec.openapis.org,
       Apache-2.0); license text shipped in `third-party/`, changes documented in `NOTICE` and
       `src/loader/schemas/README.md`.
-- [ ] **open** Package name: on 2026-10-30 `npm view openapi-contract-testing` returned 404 (name unclaimed).
-      Re-check immediately before publishing, look at similar names (`npm search openapi contract`), consider a
-      scope (`@your-scope/openapi-contract-testing`), and review trademark use of "OpenAPI" in the name.
+- [x] Package name: kept as `openapi-contract-testing` (the maintainer's decision) and now claimed on npm. A
+      trademark review of "OpenAPI" in the name was not done.
 - [x] Ran against nine large public specifications (docs/real-world-results.md); findings fixed.
 - [ ] **open** Talk to a few teams using `jest-openapi`/`vitest-openapi`-style tools and run the beta on a real
       project before promoting to `latest`.
 - [x] Version and CHANGELOG updated for each release.
 - [x] Published through `.github/workflows/release.yml`.
-- [ ] Create a GitHub release marked "pre-release" for the beta.
+- [x] Create a GitHub release marked "pre-release" for the beta.
 
 ## Ongoing compatibility checks
 
